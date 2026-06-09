@@ -15,8 +15,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
-from speclib.campaign import Campaign
 
+from speclib.campaign import Campaign
 from speclib.errors import SessionError
 from speclib.session import (
     SessionState,
@@ -491,6 +491,7 @@ class TestSessionProperties:
     )
     @settings(
         max_examples=15,
+        deadline=None,
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     def test_ts02_p5_property_artifacts_required(

@@ -146,20 +146,20 @@ structure and error hierarchy (`SpeclibError`).
     - [ ] All existing tests still pass: `uv run pytest -q`
     - [ ] No linter warnings introduced: `uv run ruff check && uv run mypy speclib/`
 
-- [ ] 5. Implement SpecSession class
-  - [ ] 5.1 Implement session state machine core
+- [x] 5. Implement SpecSession class
+  - [x] 5.1 Implement session state machine core
     - Define legal transitions as a dict/set
     - Implement `_transition(target_state)` method that checks legality and persists
     - Raise SessionError with current and required state on illegal transitions
     - _Requirements: 02-REQ-4.2, 02-REQ-4.3_
 
-  - [ ] 5.2 Implement session persistence
+  - [x] 5.2 Implement session persistence
     - `_persist()` method: atomically write _session.json
     - Include state, prd_path, assessment_history, qa_exchanges, generated_artifacts, mode
     - Call _persist() on every state transition
     - _Requirements: 02-REQ-5.1, 02-REQ-5.3_
 
-  - [ ] 5.3 Implement SpecSession.resume()
+  - [x] 5.3 Implement SpecSession.resume()
     - Read _session.json
     - Deserialize state, history, exchanges
     - Handle missing file (SessionError)
@@ -167,7 +167,7 @@ structure and error hierarchy (`SpeclibError`).
     - Return SpecSession in persisted state
     - _Requirements: 02-REQ-5.2, 02-REQ-5.E1, 02-REQ-5.E2_
 
-  - [ ] 5.4 Implement session methods (stubs and non-stubs)
+  - [x] 5.4 Implement session methods (stubs and non-stubs)
     - `assess()`: check state allows transition init->assessing, then raise NotImplementedError
     - `refine(answers)`: check state allows transition assessing->refining, then raise NotImplementedError
     - `accept_prd()`: check state is init, assessing, or refining, transition to prd_accepted
@@ -176,18 +176,18 @@ structure and error hierarchy (`SpeclibError`).
     - `render(combined)`: check all four artifacts exist, delegate to afspec
     - _Requirements: 02-REQ-4.4, 02-REQ-4.E1, 02-REQ-4.E2, 02-REQ-6.1, 02-REQ-6.2, 02-REQ-6.3, 02-REQ-6.E1_
 
-  - [ ] 5.5 Implement session properties
+  - [x] 5.5 Implement session properties
     - `state` -> SessionState
     - `spec_dir` -> Path
     - `assessment` -> Assessment | None (from assessment_history)
     - _Requirements: 02-REQ-4.1_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Session tests pass: `uv run pytest -q tests/test_session.py`
-    - [ ] Session edge case tests pass (TS-02-E7 through TS-02-E11)
-    - [ ] Session property tests pass (TS-02-P1, TS-02-P2, TS-02-P5, TS-02-P6)
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check && uv run mypy speclib/`
+  - [x] 5.V Verify task group 5
+    - [x] Session tests pass: `uv run pytest -q tests/test_session.py`
+    - [x] Session edge case tests pass (TS-02-E7 through TS-02-E11)
+    - [x] Session property tests pass (TS-02-P1, TS-02-P2, TS-02-P5, TS-02-P6)
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check && uv run mypy speclib/`
 
 - [ ] 6. Wiring verification
 

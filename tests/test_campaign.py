@@ -8,6 +8,7 @@ TS-02-SMOKE-1, TS-02-SMOKE-2 (integration smoke tests).
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -15,8 +16,8 @@ import pytest
 import yaml
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
-from speclib.campaign import Campaign
 
+from speclib.campaign import Campaign
 from speclib.errors import CampaignError
 from speclib.session import SessionState
 
@@ -314,7 +315,7 @@ class TestCampaignProperties:
 
         Validates: 02-REQ-1.1, 02-REQ-1.2, 02-REQ-1.E1
         """
-        path = tmp_path / "test_campaign"
+        path = tmp_path / f"test_campaign_{uuid.uuid4().hex[:8]}"
 
         camp = Campaign.create(path, name, desc)
         data = yaml.safe_load((path / "campaign.yaml").read_text())
