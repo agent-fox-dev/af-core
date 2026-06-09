@@ -442,6 +442,13 @@ different state. The CLI SHALL never silently ignore state mismatches.
 - `rich` (optional) — Terminal formatting for tables and colored output
 - `asyncio` — Bridge for async session methods
 
+## Operational Readiness
+
+N/A for CLI tool -- no deployment, monitoring, or rollback concerns. The CLI
+is installed as a console script via pyproject.toml and runs locally on the
+user's machine. There is no server process, no persistent state beyond the
+filesystem, and no infrastructure to manage.
+
 ## Definition of Done
 
 A task group is complete when ALL of the following are true:

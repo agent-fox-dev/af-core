@@ -44,8 +44,8 @@ before the install command, and wiring verification is last.
     - _Test Spec: TS-05-14 through TS-05-18_
 
   - [ ] 1.4 Translate edge-case tests
-    - One test function per TS-05-E{1..6}
-    - _Test Spec: TS-05-E1 through TS-05-E6_
+    - One test function per TS-05-E{1..9}
+    - _Test Spec: TS-05-E1 through TS-05-E9_
 
   - [ ] 1.5 Translate property tests
     - One property test per TS-05-P{1..3}
@@ -167,9 +167,11 @@ before the install command, and wiring verification is last.
 | 05-REQ-6.1 | TS-05-19 | 2.2 | tests/test_skill.py::test_error_handling_section |
 | 05-REQ-6.2 | TS-05-20 | 2.2 | tests/test_skill.py::test_exit_code_checking |
 | 05-REQ-6.3 | TS-05-21 | 2.2 | tests/test_skill.py::test_status_check |
-| 05-REQ-1.E1 | TS-05-E6 | 2.2 | tests/test_skill.py::test_af_spec_not_on_path |
+| 05-REQ-1.E1 | TS-05-E7 | 2.2 | tests/test_skill.py::test_unsupported_command_handling |
 | 05-REQ-2.E1 | TS-05-E4 | 2.2 | tests/test_skill.py::test_zero_questions |
 | 05-REQ-3.E1 | TS-05-E5 | 2.2 | tests/test_skill.py::test_one_shot_fallback |
+| 05-REQ-4.E1 | TS-05-E8 | 2.2 | tests/test_skill.py::test_ambiguous_answer_clarification |
+| 05-REQ-4.E2 | TS-05-E9 | 2.2 | tests/test_skill.py::test_partial_answers_handling |
 | 05-REQ-5.E1 | TS-05-E1 | 3.3 | tests/test_install_skill.py::test_no_agent_detected |
 | 05-REQ-5.E2 | TS-05-E2 | 3.3 | tests/test_install_skill.py::test_creates_missing_dir |
 | 05-REQ-5.E3 | TS-05-E3 | 3.3 | tests/test_install_skill.py::test_missing_source |
@@ -178,3 +180,12 @@ before the install command, and wiring verification is last.
 | Property 2 | TS-05-P2 | 3.2 | tests/test_install_skill.py::test_property_installed_matches_source |
 | Property 3 | TS-05-P3 | 2.2 | tests/test_skill.py::test_property_all_commands_documented |
 | Path 3 | TS-05-SMOKE-1 | 3.2 | tests/test_install_skill.py::test_smoke_full_install |
+
+## Notes
+
+- The skill file is a static markdown asset; most tests are content-inspection
+  rather than behavioral tests.
+- Edge case tests for skill content (TS-05-E4 through TS-05-E9) verify that
+  the skill file contains the relevant instructional text, not that the agent
+  follows the instructions at runtime.
+- The `install-skill` command reuses the existing Click CLI group from spec 04.

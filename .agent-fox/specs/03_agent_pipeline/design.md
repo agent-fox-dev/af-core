@@ -473,6 +473,19 @@ A task group is complete when ALL of the following are true:
 6. Code is committed on a feature branch and merged into `develop`
 7. `tasks.md` checkboxes are updated to reflect completion
 
+## Operational Readiness
+
+- **Logging:** All API calls, retries, and errors are logged at DEBUG level via
+  the standard `logging` module. AgentError messages include enough context
+  (artifact name, retry count, HTTP status) for triage without exposing API keys.
+- **Metrics hooks:** `_call_api` records attempt count and cumulative latency in
+  attributes on the returned response, allowing callers to emit metrics.
+- **Graceful degradation:** Transient API failures are retried with bounded
+  backoff; permanent failures surface immediately as AgentError so the session
+  can persist partial state and resume later.
+- **Secret handling:** The Anthropic API key is never logged, serialized to
+  `_session.json`, or included in AgentError messages.
+
 ## Testing Strategy
 
 - **Unit tests** for `SpecAgent` methods with mocked Anthropic client,

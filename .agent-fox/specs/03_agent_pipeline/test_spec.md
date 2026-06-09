@@ -838,6 +838,28 @@ await session.refine({"q1": "answer"})
 ASSERT len(session.assessment_history) == 2
 ```
 
+### TS-03-32: Generation prompt includes glossary instruction
+
+**Requirement:** 03-REQ-3.8
+**Type:** unit
+**Description:** Verify the generation prompt for requirements instructs the agent to populate the glossary.
+
+**Preconditions:**
+- None
+
+**Input:**
+- Call generation_user_prompt with artifact_name="requirements"
+
+**Expected:**
+- Prompt text contains instruction about populating glossary with backtick-wrapped domain terms
+
+**Assertion pseudocode:**
+```
+prompt = generation_user_prompt(prd_text="test", artifact_name="requirements", prior_artifacts={})
+ASSERT "glossary" in prompt.lower()
+ASSERT "backtick" in prompt.lower() or "domain" in prompt.lower()
+```
+
 ## Property Test Cases
 
 ### TS-03-P1: Assessment quality enum is valid
@@ -1442,6 +1464,7 @@ ASSERT session.state == SessionState.ASSESSING
 | 03-REQ-3.5 | TS-03-12 | unit |
 | 03-REQ-3.6 | TS-03-13 | unit |
 | 03-REQ-3.7 | TS-03-14 | unit |
+| 03-REQ-3.8 | TS-03-32 | unit |
 | 03-REQ-3.E1 | TS-03-E7 | unit |
 | 03-REQ-3.E2 | TS-03-E8 | unit |
 | 03-REQ-3.E3 | TS-03-E9 | unit |

@@ -34,7 +34,7 @@ of agent operations into the SpecSession lifecycle.
 3. [03-REQ-1.3] THE returned `Assessment` SHALL contain a `summary` field (non-empty string) describing the overall PRD quality.
 4. [03-REQ-1.4] THE returned `Assessment` SHALL contain a `gaps` field (list of strings) identifying missing or weak areas in the PRD.
 5. [03-REQ-1.5] WHEN the quality is `"needs_refinement"` or `"incomplete"`, THE `Assessment` SHALL contain a non-empty `questions` list where each entry is a `Question` with `id`, `text`, `context`, `options` (list, may be empty), and `required` (bool) fields.
-6. [03-REQ-1.6] WHEN the quality is `"ready"`, THE `Assessment` MAY contain an empty `questions` list.
+6. [03-REQ-1.6] WHEN the quality is `"ready"`, THE `Assessment` SHALL accept an empty `questions` list as valid.
 
 #### Edge Cases
 1. [03-REQ-1.E1] IF the PRD text is empty or contains only whitespace, THEN `assess_prd` SHALL raise an `AgentError` without making an API call.
@@ -50,7 +50,7 @@ of agent operations into the SpecSession lifecycle.
 2. [03-REQ-2.2] THE method SHALL return a tuple `(updated_prd_text, new_assessment)` where `updated_prd_text` is the revised PRD incorporating the user's answers and `new_assessment` is a fresh Assessment of the updated PRD.
 3. [03-REQ-2.3] THE `answers` parameter SHALL be a `dict[str, str]` mapping Question IDs to answer text.
 4. [03-REQ-2.4] THE agent SHALL preserve the original PRD's frontmatter (YAML header) and only modify body content.
-5. [03-REQ-2.5] WHEN the agent produces an updated PRD with quality `"ready"`, THE refinement loop MAY terminate (the session decides, not the agent).
+5. [03-REQ-2.5] WHEN the agent produces an updated PRD with quality `"ready"`, THE `refine_prd` method SHALL return the result without enforcing loop termination, leaving the decision to the caller.
 
 #### Edge Cases
 1. [03-REQ-2.E1] IF `answers` is empty, THEN `refine_prd` SHALL raise an `AgentError` indicating no answers were provided.

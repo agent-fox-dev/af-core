@@ -163,6 +163,15 @@ A task group is complete when ALL of the following are true:
 6. Code is committed on a feature branch and merged into `develop`
 7. `tasks.md` checkboxes are updated to reflect completion
 
+## Operational Readiness
+
+- **Packaging:** Distributed as a Python package installable via `uv`. No
+  deployment, monitoring, or rollback concerns — this is a local CLI tool.
+- **Configuration:** Settings file at `~/.af/settings.yaml` is optional;
+  defaults are functional without it.
+- **Secrets:** API keys are read from environment variables or the settings
+  file. Never logged or persisted beyond the config source.
+
 ## Testing Strategy
 
 - **Unit tests** for `load_config()` using temp YAML files and env var patching.

@@ -1272,6 +1272,148 @@ with mock raising RuntimeError("unexpected"):
     ASSERT result.exit_code == 2
 ```
 
+## Edge Case Tests
+
+### TS-04-E1: Init resolves relative path to absolute
+
+**Requirement:** 04-REQ-1.E1
+**Type:** edge-case
+**Description:** Verify init resolves a relative path to absolute before passing to Campaign.create.
+**Covered by:** TS-04-5
+
+**Assertion pseudocode:**
+```
+runner = CliRunner()
+with mock Campaign.create:
+    result = runner.invoke(main, ["init", "./my-campaign", "--name", "Test"])
+    ASSERT Path(Campaign.create.call_args[0][0]).is_absolute()
+```
+
+### TS-04-E2: List error on non-campaign directory
+
+**Requirement:** 04-REQ-2.E1
+**Type:** edge-case
+**Description:** Verify list fails with clear error when directory has no campaign.yaml.
+**Covered by:** TS-04-10
+
+**Assertion pseudocode:**
+```
+runner = CliRunner()
+with mock Campaign.open raising CampaignError:
+    result = runner.invoke(main, ["list"])
+    ASSERT result.exit_code == 1
+    ASSERT "campaign" in result.output.lower()
+```
+
+### TS-04-E3: New with invalid spec name
+
+**Requirement:** 04-REQ-3.E1
+**Type:** edge-case
+**Description:** Verify error when spec name contains characters not matching `[a-z][a-z0-9_]*`.
+**Covered by:** TS-04-16
+
+**Assertion pseudocode:**
+```
+runner = CliRunner()
+with mock campaign.new_spec raising CampaignError("invalid name"):
+    result = runner.invoke(main, ["new", str(prd_path), "--name", "Invalid Name!"])
+    ASSERT result.exit_code == 1
+```
+
+### TS-04-E4: Assess agent pipeline error
+
+**Requirement:** 04-REQ-4.E1
+**Type:** edge-case
+**Description:** Verify assess exits 2 on unexpected agent pipeline error.
+**Covered by:** TS-04-20
+
+**Assertion pseudocode:**
+```
+runner = CliRunner()
+with mock session.assess raising RuntimeError("agent failed"):
+    result = runner.invoke(main, ["assess", "01"])
+    ASSERT result.exit_code == 2
+```
+
+### TS-04-E5: Refine invalid answers schema
+
+**Requirement:** 04-REQ-5.E1
+**Type:** edge-case
+**Description:** Verify refine fails when JSON is not an object mapping question IDs to strings.
+**Covered by:** TS-04-26
+
+**Assertion pseudocode:**
+```
+runner = CliRunner()
+with temp file "bad_schema.json" = '["not", "an", "object"]':
+    result = runner.invoke(main, ["refine", "01", "--answers", str(bad_path)])
+    ASSERT result.exit_code == 1
+```
+
+### TS-04-E6: Generate agent pipeline error
+
+**Requirement:** 04-REQ-7.E1
+**Type:** edge-case
+**Description:** Verify generate exits 2 on unexpected agent pipeline error.
+**Covered by:** TS-04-31
+
+**Assertion pseudocode:**
+```
+runner = CliRunner()
+with mock session.generate raising RuntimeError("agent failed"):
+    result = runner.invoke(main, ["generate", "01"])
+    ASSERT result.exit_code == 2
+```
+
+### TS-04-E7: Validate with missing artifacts
+
+**Requirement:** 04-REQ-8.E1
+**Type:** edge-case
+**Description:** Verify validate reports missing artifacts when spec is not yet generated.
+**Covered by:** TS-04-34
+
+**Assertion pseudocode:**
+```
+runner = CliRunner()
+with mock session.validate raising SessionError("missing artifacts"):
+    result = runner.invoke(main, ["validate", "01"])
+    ASSERT result.exit_code == 1
+    ASSERT "missing" in result.output.lower()
+```
+
+### TS-04-E8: Render with missing artifacts
+
+**Requirement:** 04-REQ-9.E1
+**Type:** edge-case
+**Description:** Verify render reports missing artifacts.
+**Covered by:** TS-04-38
+
+**Assertion pseudocode:**
+```
+runner = CliRunner()
+with mock session.render raising SessionError("missing artifacts"):
+    result = runner.invoke(main, ["render", "01"])
+    ASSERT result.exit_code == 1
+    ASSERT "missing" in result.output.lower()
+```
+
+### TS-04-E9: Spec not found lists available specs
+
+**Requirement:** 04-REQ-10.E1
+**Type:** edge-case
+**Description:** Verify unmatched spec argument lists available specs by number and name.
+**Covered by:** TS-04-44
+
+**Assertion pseudocode:**
+```
+runner = CliRunner()
+with campaign containing specs 01 and 02:
+    result = runner.invoke(main, ["assess", "99"])
+    ASSERT result.exit_code == 1
+    ASSERT "01" in result.output
+    ASSERT "02" in result.output
+```
+
 ## Property Test Cases
 
 ### TS-04-P1: Spec resolution determinism
@@ -1492,48 +1634,48 @@ ASSERT "#" in result2.output  # markdown headers
 | 04-REQ-1.2 | TS-04-2 | unit |
 | 04-REQ-1.3 | TS-04-3 | unit |
 | 04-REQ-1.4 | TS-04-4 | unit |
-| 04-REQ-1.E1 | TS-04-5 | unit |
+| 04-REQ-1.E1 | TS-04-5, TS-04-E1 | unit, edge-case |
 | 04-REQ-2.1 | TS-04-6 | unit |
 | 04-REQ-2.2 | TS-04-7 | unit |
 | 04-REQ-2.3 | TS-04-8 | unit |
 | 04-REQ-2.4 | TS-04-9 | unit |
-| 04-REQ-2.E1 | TS-04-10 | unit |
+| 04-REQ-2.E1 | TS-04-10, TS-04-E2 | unit, edge-case |
 | 04-REQ-3.1 | TS-04-11 | unit |
 | 04-REQ-3.2 | TS-04-12, TS-04-13 | unit |
 | 04-REQ-3.3 | TS-04-14 | unit |
 | 04-REQ-3.4 | TS-04-15 | unit |
-| 04-REQ-3.E1 | TS-04-16 | unit |
+| 04-REQ-3.E1 | TS-04-16, TS-04-E3 | unit, edge-case |
 | 04-REQ-4.1 | TS-04-17 | unit |
 | 04-REQ-4.2 | TS-04-18 | unit |
 | 04-REQ-4.3 | TS-04-19 | unit |
-| 04-REQ-4.E1 | TS-04-20 | unit |
+| 04-REQ-4.E1 | TS-04-20, TS-04-E4 | unit, edge-case |
 | 04-REQ-5.1 | TS-04-21 | unit |
 | 04-REQ-5.2 | TS-04-22 | unit |
 | 04-REQ-5.3 | TS-04-23 | unit |
 | 04-REQ-5.4 | TS-04-24 | unit |
 | 04-REQ-5.5 | TS-04-25 | unit |
-| 04-REQ-5.E1 | TS-04-26 | unit |
+| 04-REQ-5.E1 | TS-04-26, TS-04-E5 | unit, edge-case |
 | 04-REQ-6.1 | TS-04-27 | unit |
 | 04-REQ-6.2 | TS-04-28 | unit |
 | 04-REQ-7.1 | TS-04-29 | unit |
 | 04-REQ-7.2 | TS-04-29 | unit |
 | 04-REQ-7.3 | TS-04-30 | unit |
-| 04-REQ-7.E1 | TS-04-31 | unit |
+| 04-REQ-7.E1 | TS-04-31, TS-04-E6 | unit, edge-case |
 | 04-REQ-8.1 | TS-04-32 | unit |
 | 04-REQ-8.2 | TS-04-32 | unit |
 | 04-REQ-8.3 | TS-04-33 | unit |
 | 04-REQ-8.4 | TS-04-33 | unit |
-| 04-REQ-8.E1 | TS-04-34 | unit |
+| 04-REQ-8.E1 | TS-04-34, TS-04-E7 | unit, edge-case |
 | 04-REQ-9.1 | TS-04-35 | unit |
 | 04-REQ-9.2 | TS-04-36 | unit |
 | 04-REQ-9.3 | TS-04-37 | unit |
-| 04-REQ-9.E1 | TS-04-38 | unit |
+| 04-REQ-9.E1 | TS-04-38, TS-04-E8 | unit, edge-case |
 | 04-REQ-10.1 | TS-04-39 | unit |
 | 04-REQ-10.2 | TS-04-40 | unit |
 | 04-REQ-10.3 | TS-04-41 | unit |
 | 04-REQ-10.4 | TS-04-42 | unit |
 | 04-REQ-10.5 | TS-04-43 | unit |
-| 04-REQ-10.E1 | TS-04-44 | unit |
+| 04-REQ-10.E1 | TS-04-44, TS-04-E9 | unit, edge-case |
 | 04-REQ-CC.1 | TS-04-45 | unit |
 | 04-REQ-CC.2 | TS-04-45 | unit |
 | 04-REQ-CC.3 | TS-04-46 | unit |

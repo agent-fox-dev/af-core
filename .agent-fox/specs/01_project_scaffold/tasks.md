@@ -192,3 +192,13 @@ Groups are ordered so the scaffold exists before tests can import anything.
 | Property 3 | TS-01-P3 | 3.2 | tests/test_auth.py::test_property_client_type |
 | Path 1 | TS-01-SMOKE-1 | 3.1 | tests/test_config.py::test_smoke_config_load |
 | Path 2 | TS-01-SMOKE-2 | 3.2 | tests/test_auth.py::test_smoke_client_creation |
+| 01-REQ-1.E1 | TS-01-E7 | 2.1 | tests/test_scaffold.py::test_uv_required |
+
+## Notes
+
+- Auth client tests mock the `anthropic.Anthropic`, `AnthropicBedrock`, and
+  `AnthropicVertex` constructors to avoid real API calls.
+- Config tests use `tmp_path` fixtures with patched `Path.home()` to isolate
+  settings file access.
+- The CLI entry point (`af-spec`) is a minimal stub in this spec — spec 04
+  implements the full command set.

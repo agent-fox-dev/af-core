@@ -636,6 +636,71 @@ content = SKILL_FILE_PATH.read_text().lower()
 ASSERT "install" in content and "speclib" in content
 ```
 
+### TS-05-E7: Unsupported command handling
+
+**Requirement:** 05-REQ-1.E1
+**Type:** unit
+**Description:** Verify the skill file instructs the agent to report unsupported commands to the user rather than failing silently.
+
+**Preconditions:**
+- Skill file exists
+
+**Input:**
+- Read skill file content
+
+**Expected:**
+- Contains instructions about reporting unsupported or unavailable commands to the user
+
+**Assertion pseudocode:**
+```
+content = SKILL_FILE_PATH.read_text().lower()
+ASSERT "unsupported" in content or "not supported" in content or "not available" in content
+ASSERT "report" in content or "inform" in content or "tell" in content
+```
+
+### TS-05-E8: Ambiguous answer clarification
+
+**Requirement:** 05-REQ-4.E1
+**Type:** unit
+**Description:** Verify the skill file instructs the agent to ask for clarification when an answer cannot be mapped to a question.
+
+**Preconditions:**
+- Skill file exists
+
+**Input:**
+- Read skill file content
+
+**Expected:**
+- Contains instructions about asking for clarification when an answer is ambiguous
+
+**Assertion pseudocode:**
+```
+content = SKILL_FILE_PATH.read_text().lower()
+ASSERT "clarif" in content  # matches clarify, clarification
+ASSERT "map" in content or "match" in content or "which question" in content
+```
+
+### TS-05-E9: Partial answers handling
+
+**Requirement:** 05-REQ-4.E2
+**Type:** unit
+**Description:** Verify the skill file instructs the agent to pass partial answers to refine and note unanswered questions.
+
+**Preconditions:**
+- Skill file exists
+
+**Input:**
+- Read skill file content
+
+**Expected:**
+- Contains instructions about handling partial answers and noting unanswered questions
+
+**Assertion pseudocode:**
+```
+content = SKILL_FILE_PATH.read_text().lower()
+ASSERT "partial" in content or "some question" in content or "unanswered" in content
+```
+
 ## Property Test Cases
 
 ### TS-05-P1: Skill file is package-complete
@@ -749,9 +814,11 @@ with patched_home(tmp_path):
 | 05-REQ-6.1 | TS-05-19 | unit |
 | 05-REQ-6.2 | TS-05-20 | unit |
 | 05-REQ-6.3 | TS-05-21 | unit |
-| 05-REQ-1.E1 | TS-05-E6 | unit |
+| 05-REQ-1.E1 | TS-05-E7 | unit |
 | 05-REQ-2.E1 | TS-05-E4 | unit |
 | 05-REQ-3.E1 | TS-05-E5 | unit |
+| 05-REQ-4.E1 | TS-05-E8 | unit |
+| 05-REQ-4.E2 | TS-05-E9 | unit |
 | 05-REQ-5.E1 | TS-05-E1 | unit |
 | 05-REQ-5.E2 | TS-05-E2 | unit |
 | 05-REQ-5.E3 | TS-05-E3 | unit |

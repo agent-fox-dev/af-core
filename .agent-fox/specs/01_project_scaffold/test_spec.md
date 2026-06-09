@@ -598,6 +598,28 @@ del os.environ["AF_SPEC_VERTEX_PROJECT"]
 ASSERT raises(ConfigError, create_client)
 ```
 
+### TS-01-E7: uv required for installation
+
+**Requirement:** 01-REQ-1.E1
+**Type:** unit
+**Description:** Verify pyproject.toml does not include pip-based install instructions and the project documents uv as the only supported installer.
+
+**Preconditions:**
+- pyproject.toml exists
+
+**Input:**
+- Read pyproject.toml and README.md
+
+**Expected:**
+- No pip install instructions in README; uv is documented as required
+
+**Assertion pseudocode:**
+```
+readme = read("README.md")
+ASSERT "uv" in readme
+ASSERT "pip install" not in readme or "uv pip install" in readme
+```
+
 ## Integration Smoke Tests
 
 ### TS-01-SMOKE-1: Configuration loading end-to-end
@@ -666,6 +688,7 @@ ASSERT model == "claude-sonnet-4-6"
 | 01-REQ-3.5 | TS-01-15 | unit |
 | 01-REQ-4.1 | TS-01-16 | unit |
 | 01-REQ-4.2 | TS-01-17 | unit |
+| 01-REQ-1.E1 | TS-01-E7 | unit |
 | 01-REQ-2.E1 | TS-01-E1 | unit |
 | 01-REQ-2.E2 | TS-01-E2 | unit |
 | 01-REQ-2.E3 | TS-01-E3 | unit |

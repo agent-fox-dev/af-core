@@ -464,6 +464,15 @@ A task group is complete when ALL of the following are true:
 6. Code is committed on a feature branch and merged into `develop`
 7. `tasks.md` checkboxes are updated to reflect completion
 
+## Operational Readiness
+
+- **Packaging:** Campaign and session modules are part of the speclib package.
+  No standalone deployment concerns.
+- **Persistence:** `_session.json` and `campaign.yaml` use atomic writes
+  (temp-then-rename) for crash safety. No database or external storage.
+- **Recovery:** Interrupted sessions are resumable via `SpecSession.resume()`.
+  Partial state is always recoverable from `_session.json`.
+
 ## Testing Strategy
 
 - **Unit tests** for `Campaign.create`, `Campaign.open`, `campaign.new_spec`,

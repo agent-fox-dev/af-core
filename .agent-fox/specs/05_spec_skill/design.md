@@ -188,6 +188,19 @@ A task group is complete when ALL of the following are true:
 6. Code is committed on a feature branch and merged into `develop`
 7. `tasks.md` checkboxes are updated to reflect completion
 
+## Operational Readiness
+
+- **Packaging:** The skill file (`speclib/skill/af-spec.md`) is included in the
+  Python package via `package_data`. No additional build steps required.
+- **Upgrades:** Running `af-spec install-skill` after a package upgrade
+  overwrites the previously installed skill file, keeping agent CLIs in sync
+  with the current version.
+- **Rollback:** Removing or replacing the installed skill file
+  (`~/.claude/skills/af-spec.md`) restores the previous agent behavior. No
+  persistent state is created beyond the copied file.
+- **Monitoring:** The `install-skill` command prints a success or error message
+  to stdout/stderr. No additional logging or telemetry is introduced.
+
 ## Testing Strategy
 
 - **Unit tests** for `detect_agent_cli()` using mocked home directories.

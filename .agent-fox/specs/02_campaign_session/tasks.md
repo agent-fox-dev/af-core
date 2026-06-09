@@ -233,44 +233,58 @@ structure and error hierarchy (`SpeclibError`).
 
 | Requirement | Test Spec Entry | Implemented By Task | Verified By Test |
 |-------------|-----------------|---------------------|------------------|
-| 02-REQ-1.1 | TS-02-1 | 3.1 | tests/test_campaign.py::test_campaign_create |
-| 02-REQ-1.2 | TS-02-2 | 3.1 | tests/test_campaign.py::test_campaign_create_fails_existing |
-| 02-REQ-1.3 | TS-02-3 | 2.3, 3.1 | tests/test_campaign.py::test_campaign_yaml_fields |
-| 02-REQ-2.1 | TS-02-4 | 3.2 | tests/test_campaign.py::test_campaign_open |
-| 02-REQ-2.2 | TS-02-5 | 3.3 | tests/test_campaign.py::test_campaign_specs_sorted |
-| 02-REQ-3.1 | TS-02-6 | 3.4 | tests/test_campaign.py::test_new_spec_string_prd |
-| 02-REQ-3.2 | TS-02-7 | 3.4 | tests/test_campaign.py::test_new_spec_path_prd |
-| 02-REQ-3.3 | TS-02-8 | 3.4 | tests/test_campaign.py::test_spec_dir_sequential_prefixes |
-| 02-REQ-3.4 | TS-02-9 | 3.4 | tests/test_campaign.py::test_prd_frontmatter |
-| 02-REQ-4.1 | TS-02-10 | 2.2 | tests/test_session.py::test_session_state_enum |
-| 02-REQ-4.2 | TS-02-11 | 4.1 | tests/test_session.py::test_legal_state_transitions |
-| 02-REQ-4.3 | TS-02-12 | 4.1 | tests/test_session.py::test_illegal_transition_error_message |
-| 02-REQ-4.4 | TS-02-13 | 4.4 | tests/test_session.py::test_accept_prd_from_assessing_and_refining |
-| 02-REQ-5.1 | TS-02-14 | 4.2 | tests/test_session.py::test_state_persisted_on_transition |
-| 02-REQ-5.2 | TS-02-15 | 4.3 | tests/test_session.py::test_session_resume |
-| 02-REQ-5.3 | TS-02-16 | 4.2 | tests/test_session.py::test_session_json_fields |
-| 02-REQ-6.1 | TS-02-17 | 4.4 | tests/test_session.py::test_validate_with_artifacts |
-| 02-REQ-6.2 | TS-02-18 | 4.4 | tests/test_session.py::test_render_combined |
-| 02-REQ-6.3 | TS-02-19 | 4.4 | tests/test_session.py::test_render_individual |
-| 02-REQ-1.E1 | TS-02-E1 | 3.1 | tests/test_campaign.py::test_create_non_empty_non_campaign |
-| 02-REQ-1.E2 | TS-02-E2 | 3.1 | tests/test_campaign.py::test_create_parent_missing |
-| 02-REQ-2.E1 | TS-02-E3 | 3.2 | tests/test_campaign.py::test_open_no_campaign_yaml |
-| 02-REQ-2.E2 | TS-02-E4 | 3.2 | tests/test_campaign.py::test_open_invalid_yaml |
-| 02-REQ-3.E1 | TS-02-E5 | 3.4 | tests/test_campaign.py::test_new_spec_invalid_name |
-| 02-REQ-3.E2 | TS-02-E6 | 3.4 | tests/test_campaign.py::test_new_spec_nonexistent_prd_path |
-| 02-REQ-4.E1 | TS-02-E7 | 4.1 | tests/test_session.py::test_generate_from_wrong_state |
-| 02-REQ-4.E2 | TS-02-E8 | 4.1 | tests/test_session.py::test_assess_from_generated |
-| 02-REQ-5.E1 | TS-02-E9 | 4.3 | tests/test_session.py::test_resume_no_session_json |
-| 02-REQ-5.E2 | TS-02-E10 | 4.3 | tests/test_session.py::test_resume_invalid_json |
-| 02-REQ-6.E1 | TS-02-E11 | 4.4 | tests/test_session.py::test_validate_render_missing_artifacts |
-| Property 1 | TS-02-P1 | 4.1 | tests/test_session.py::test_property_state_machine_total |
-| Property 2 | TS-02-P2 | 4.2, 4.3 | tests/test_session.py::test_property_persistence_idempotent |
-| Property 3 | TS-02-P3 | 3.4 | tests/test_campaign.py::test_property_numbering_monotonic |
-| Property 4 | TS-02-P4 | 3.1 | tests/test_campaign.py::test_property_create_atomic |
-| Property 5 | TS-02-P5 | 4.4 | tests/test_session.py::test_property_artifacts_required |
-| Property 6 | TS-02-P6 | 4.4 | tests/test_session.py::test_property_accept_prd_states |
-| Path 1+3 | TS-02-SMOKE-1 | 3.1, 3.4 | tests/test_campaign.py::test_smoke_campaign_to_spec_creation |
-| Path 2 | TS-02-SMOKE-2 | 3.2, 3.3 | tests/test_campaign.py::test_smoke_open_and_list_specs |
-| Path 4 | TS-02-SMOKE-3 | 4.1, 4.4 | tests/test_session.py::test_smoke_session_lifecycle |
-| Path 5 | TS-02-SMOKE-4 | 4.3 | tests/test_session.py::test_smoke_session_resume |
-| Path 6 | TS-02-SMOKE-5 | 4.4 | tests/test_session.py::test_smoke_validate_and_render |
+| 02-REQ-1.1 | TS-02-1 | 4.1 | tests/test_campaign.py::test_campaign_create |
+| 02-REQ-1.2 | TS-02-2 | 4.1 | tests/test_campaign.py::test_campaign_create_fails_existing |
+| 02-REQ-1.3 | TS-02-3 | 3.3, 4.1 | tests/test_campaign.py::test_campaign_yaml_fields |
+| 02-REQ-2.1 | TS-02-4 | 4.2 | tests/test_campaign.py::test_campaign_open |
+| 02-REQ-2.2 | TS-02-5 | 4.3 | tests/test_campaign.py::test_campaign_specs_sorted |
+| 02-REQ-3.1 | TS-02-6 | 4.4 | tests/test_campaign.py::test_new_spec_string_prd |
+| 02-REQ-3.2 | TS-02-7 | 4.4 | tests/test_campaign.py::test_new_spec_path_prd |
+| 02-REQ-3.3 | TS-02-8 | 4.4 | tests/test_campaign.py::test_spec_dir_sequential_prefixes |
+| 02-REQ-3.4 | TS-02-9 | 4.4 | tests/test_campaign.py::test_prd_frontmatter |
+| 02-REQ-4.1 | TS-02-10 | 3.2 | tests/test_session.py::test_session_state_enum |
+| 02-REQ-4.2 | TS-02-11 | 5.1 | tests/test_session.py::test_legal_state_transitions |
+| 02-REQ-4.3 | TS-02-12 | 5.1 | tests/test_session.py::test_illegal_transition_error_message |
+| 02-REQ-4.4 | TS-02-13 | 5.4 | tests/test_session.py::test_accept_prd_from_assessing_and_refining |
+| 02-REQ-5.1 | TS-02-14 | 5.2 | tests/test_session.py::test_state_persisted_on_transition |
+| 02-REQ-5.2 | TS-02-15 | 5.3 | tests/test_session.py::test_session_resume |
+| 02-REQ-5.3 | TS-02-16 | 5.2 | tests/test_session.py::test_session_json_fields |
+| 02-REQ-6.1 | TS-02-17 | 5.4 | tests/test_session.py::test_validate_with_artifacts |
+| 02-REQ-6.2 | TS-02-18 | 5.4 | tests/test_session.py::test_render_combined |
+| 02-REQ-6.3 | TS-02-19 | 5.4 | tests/test_session.py::test_render_individual |
+| 02-REQ-1.E1 | TS-02-E1 | 4.1 | tests/test_campaign.py::test_create_non_empty_non_campaign |
+| 02-REQ-1.E2 | TS-02-E2 | 4.1 | tests/test_campaign.py::test_create_parent_missing |
+| 02-REQ-2.E1 | TS-02-E3 | 4.2 | tests/test_campaign.py::test_open_no_campaign_yaml |
+| 02-REQ-2.E2 | TS-02-E4 | 4.2 | tests/test_campaign.py::test_open_invalid_yaml |
+| 02-REQ-3.E1 | TS-02-E5 | 4.4 | tests/test_campaign.py::test_new_spec_invalid_name |
+| 02-REQ-3.E2 | TS-02-E6 | 4.4 | tests/test_campaign.py::test_new_spec_nonexistent_prd_path |
+| 02-REQ-4.E1 | TS-02-E7 | 5.1 | tests/test_session.py::test_generate_from_wrong_state |
+| 02-REQ-4.E2 | TS-02-E8 | 5.1 | tests/test_session.py::test_assess_from_generated |
+| 02-REQ-5.E1 | TS-02-E9 | 5.3 | tests/test_session.py::test_resume_no_session_json |
+| 02-REQ-5.E2 | TS-02-E10 | 5.3 | tests/test_session.py::test_resume_invalid_json |
+| 02-REQ-6.E1 | TS-02-E11 | 5.4 | tests/test_session.py::test_validate_render_missing_artifacts |
+| Property 1 | TS-02-P1 | 5.1 | tests/test_session.py::test_property_state_machine_total |
+| Property 2 | TS-02-P2 | 5.2, 5.3 | tests/test_session.py::test_property_persistence_idempotent |
+| Property 3 | TS-02-P3 | 4.4 | tests/test_campaign.py::test_property_numbering_monotonic |
+| Property 4 | TS-02-P4 | 4.1 | tests/test_campaign.py::test_property_create_atomic |
+| Property 5 | TS-02-P5 | 5.4 | tests/test_session.py::test_property_artifacts_required |
+| Property 6 | TS-02-P6 | 5.4 | tests/test_session.py::test_property_accept_prd_states |
+| Path 1+3 | TS-02-SMOKE-1 | 4.1, 4.4 | tests/test_campaign.py::test_smoke_campaign_to_spec_creation |
+| Path 2 | TS-02-SMOKE-2 | 4.2, 4.3 | tests/test_campaign.py::test_smoke_open_and_list_specs |
+| Path 4 | TS-02-SMOKE-3 | 5.1, 5.4 | tests/test_session.py::test_smoke_session_lifecycle |
+| Path 5 | TS-02-SMOKE-4 | 5.3 | tests/test_session.py::test_smoke_session_resume |
+| Path 6 | TS-02-SMOKE-5 | 5.4 | tests/test_session.py::test_smoke_validate_and_render |
+
+## Notes
+
+- All campaign and session tests use `tmp_path` fixtures to avoid filesystem
+  side effects.
+- `assess()`, `refine()`, and `generate()` raise `NotImplementedError` in this
+  spec — they are stubs for the state machine. Spec 03 provides the agent
+  implementations that replace these stubs.
+- Session state machine tests use Hypothesis to generate random sequences of
+  method calls and verify that every outcome is either a successful transition
+  or a `SessionError`.
+- The `validate()` and `render()` methods delegate to `afspec.load_spec()`,
+  `afspec.validate()`, and `afspec.render_*()` — tests mock these at the
+  afspec boundary.

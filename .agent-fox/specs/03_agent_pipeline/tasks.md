@@ -286,7 +286,7 @@ These must be implemented before task group 3 of this spec.
 | 03-REQ-3.5 | TS-03-12 | 6.2 | tests/test_agent.py::test_validation_failure_aborts |
 | 03-REQ-3.6 | TS-03-13 | 6.2 | tests/test_agent.py::test_test_spec_includes_requirements |
 | 03-REQ-3.7 | TS-03-14 | 6.2 | tests/test_agent.py::test_tasks_includes_both_prior |
-| 03-REQ-3.8 | TS-03-14 | 6.2 | tests/test_agent.py::test_glossary_population |
+| 03-REQ-3.8 | TS-03-32 | 4.1 | tests/test_prompts.py::test_glossary_instruction |
 | 03-REQ-3.E1 | TS-03-E7 | 6.2 | tests/test_agent.py::test_empty_prd_generate |
 | 03-REQ-3.E2 | TS-03-E8 | 6.2 | tests/test_agent.py::test_artifact_tool_not_invoked |
 | 03-REQ-3.E3 | TS-03-E9 | 6.2 | tests/test_agent.py::test_schema_validation_error_detail |
@@ -320,3 +320,9 @@ These must be implemented before task group 3 of this spec.
 | Path 2 | TS-03-SMOKE-2 | 7.2 | tests/test_session_agent.py::test_smoke_refinement |
 | Path 3 | TS-03-SMOKE-3 | 7.3 | tests/test_session_agent.py::test_smoke_generation |
 | Path 4 | TS-03-SMOKE-4 | 5.2, 7.1 | tests/test_session_agent.py::test_smoke_retry_recovery |
+
+## Notes
+
+- Task groups 1-2 write failing tests; groups 3-7 implement production code to make them pass; group 8 verifies end-to-end wiring.
+- All agent tests use a mocked Anthropic client; no real API calls are made during the test suite.
+- The `afspec` validation library is assumed to be installed as a dependency; its schemas are the source of truth for artifact structure.
