@@ -82,14 +82,14 @@ before the install command, and wiring verification is last.
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings introduced: `uv run ruff check`
 
-- [ ] 3. Implement install-skill command
-  - [ ] 3.1 Implement detect_agent_cli()
+- [x] 3. Implement install-skill command
+  - [x] 3.1 Implement detect_agent_cli()
     - Add `detect_agent_cli()` function to `speclib/skill/__init__.py`
     - Check `~/.claude/` and `~/.gemini/` directories
     - Return agent name or None
     - _Requirements: 05-REQ-5.1_
 
-  - [ ] 3.2 Implement install-skill CLI command
+  - [x] 3.2 Implement install-skill CLI command
     - Add `install-skill` subcommand to `speclib/cli.py`
     - Accept `--target` option with choices `claude`, `gemini`
     - Copy skill file to detected or specified target
@@ -98,18 +98,18 @@ before the install command, and wiring verification is last.
     - Print success message with installed path
     - _Requirements: 05-REQ-5.2 through 05-REQ-5.5_
 
-  - [ ] 3.3 Handle all error conditions
+  - [x] 3.3 Handle all error conditions
     - No agent CLI detected without --target: error with supported list
     - Target directory missing: create it
     - Source file missing: raise SpeclibError
     - _Requirements: 05-REQ-5.E1 through 05-REQ-5.E3_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Install-skill tests pass: `uv run pytest -q tests/test_install_skill.py`
-    - [ ] Property tests pass: `uv run pytest -q tests/ -k property`
-    - [ ] Smoke test passes: `uv run pytest -q tests/ -k smoke`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check && uv run mypy speclib/`
+  - [x] 3.V Verify task group 3
+    - [x] Install-skill tests pass: `uv run pytest -q tests/test_install_skill.py`
+    - [x] Property tests pass: `uv run pytest -q tests/ -k property`
+    - [x] Smoke test passes: `uv run pytest -q tests/ -k smoke`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check && uv run mypy speclib/`
 
 - [ ] 4. Wiring verification
 

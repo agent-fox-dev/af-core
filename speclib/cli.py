@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -17,7 +18,7 @@ from typing import Any
 import click
 
 from speclib.campaign import Campaign
-from speclib.errors import CampaignError, SessionError
+from speclib.errors import CampaignError, SessionError, SpeclibError
 from speclib.session import SpecSession
 
 _SPEC_DIR_RE = re.compile(r"^(\d{2})_(.+)$")
@@ -617,3 +618,67 @@ def status_cmd(ctx: click.Context, spec: str | None) -> None:
     except Exception as exc:
         click.echo(f"Internal error: {exc}", err=True)
         sys.exit(2)
+
+
+# ---------------------------------------------------------------------------
+# Skill installation command
+# ---------------------------------------------------------------------------
+
+
+@main.command("install-skill")
+@click.option(
+    "--target",
+    type=click.Choice(["claude", "gemini"]),
+    default=None,
+    help="Target agent CLI (auto-detected if omitted)",
+)
+def install_skill(target: str | None) -> None:
+    """Install the af-spec skill to an agent CLI."""
+    from speclib.skill import AGENT_TARGETS, SKILL_FILE_PATH, detect_agent_cli
+
+    try:
+        # Verify source file exists (guards against corrupt installation).
+        if not SKILL_FILE_PATH.exists():
+            raise SpeclibError(
+                f"Skill source file not found at {SKILL_FILE_PATH}. "
+                "The speclib package may be incomplete or corrupted."
+            )
+
+        # Determine target agent CLI.
+        if target is None:
+            target = detect_agent_cli()
+            if target is None:
+                supported = ", ".join(AGENT_TARGETS)
+                click.echo(
+                    f"Error: No supported agent CLI detected. "
+                    f"Supported targets: {supported}\n"
+                    f"Use --target to specify one (e.g. "
+                    f"--target claude or --target gemini).",
+                    err=True,
+                )
+                sys.exit(1)
+
+        # Resolve destination path.
+        home = Path.home()
+        skill_dir = home / AGENT_TARGETS[target]
+        dest = skill_dir / "af-spec.md"
+
+        # Create skill directory if needed.
+        skill_dir.mkdir(parents=True, exist_ok=True)
+
+        # Determine if this is an update.
+        is_update = dest.exists()
+
+        # Copy skill file.
+        shutil.copy2(SKILL_FILE_PATH, dest)
+
+        # Report success.
+        action = "Updated" if is_update else "Installed"
+        click.echo(f"{action} af-spec skill to {dest}")
+    except SpeclibError as exc:
+        click.echo(f"Error: {exc}", err=True)
+        sys.exit(1)
+
+
+# Alias for test compatibility and alternate import style.
+cli = main
