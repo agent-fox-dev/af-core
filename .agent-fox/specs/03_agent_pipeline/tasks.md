@@ -126,12 +126,12 @@ These must be implemented before task group 3 of this spec.
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings introduced: `uv run ruff check speclib/prompts.py`
 
-- [ ] 5. Implement SpecAgent — infrastructure and assessment
-  - [ ] 5.1 Implement speclib/agent.py -- SpecAgent.__init__
+- [x] 5. Implement SpecAgent — infrastructure and assessment
+  - [x] 5.1 Implement speclib/agent.py -- SpecAgent.__init__
     - Store client and model
     - _Requirements: none (structural)_
 
-  - [ ] 5.2 Implement SpecAgent._call_api
+  - [x] 5.2 Implement SpecAgent._call_api
     - Async method calling client.messages.create
     - Retry logic: catch 429/5xx/connection errors
     - Exponential backoff: 1s, 2s, 4s (max 3 retries)
@@ -139,24 +139,24 @@ These must be implemented before task group 3 of this spec.
     - Wrap permanent failures in AgentError with __cause__
     - _Requirements: 03-REQ-5.1, 03-REQ-5.2, 03-REQ-5.3, 03-REQ-5.E1, 03-REQ-5.E2_
 
-  - [ ] 5.3 Implement SpecAgent._extract_tool_call and _parse_assessment
+  - [x] 5.3 Implement SpecAgent._extract_tool_call and _parse_assessment
     - Find tool_use content block by tool name; raise AgentError if not found
     - Validate required fields: quality, summary, gaps, questions
     - Build Assessment and Question objects
     - _Requirements: 03-REQ-1.2, 03-REQ-1.3, 03-REQ-1.4, 03-REQ-1.5, 03-REQ-1.6, 03-REQ-1.E2, 03-REQ-1.E3, 03-REQ-5.5_
 
-  - [ ] 5.4 Implement SpecAgent.assess_prd
+  - [x] 5.4 Implement SpecAgent.assess_prd
     - Validate prd_text not empty
     - Build messages using prompt templates
     - Call _call_api with assessment_tools
     - Extract and parse assessment
     - _Requirements: 03-REQ-1.1, 03-REQ-1.E1_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Assessment tests pass: `uv run pytest -q tests/test_agent.py -k assess`
-    - [ ] Retry tests pass: `uv run pytest -q tests/test_agent.py -k retry`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check && uv run mypy speclib/agent.py`
+  - [x] 5.V Verify task group 5
+    - [x] Assessment tests pass: `uv run pytest -q tests/test_agent.py -k assess`
+    - [x] Retry tests pass: `uv run pytest -q tests/test_agent.py -k retry`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check && uv run mypy speclib/agent.py`
 
 - [ ] 6. Implement SpecAgent — refinement and generation
   - [ ] 6.1 Implement SpecAgent.refine_prd

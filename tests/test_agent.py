@@ -960,7 +960,7 @@ class TestPropertyRetryBound:
 
         with patch("asyncio.sleep", new_callable=AsyncMock):
             if n_errors <= 3:
-                asyncio.get_event_loop().run_until_complete(
+                asyncio.run(
                     agent._call_api(
                         messages=[{"role": "user", "content": "test"}],
                         tools=[],
@@ -971,7 +971,7 @@ class TestPropertyRetryBound:
                 )
             else:
                 with pytest.raises(AgentError):
-                    asyncio.get_event_loop().run_until_complete(
+                    asyncio.run(
                         agent._call_api(
                             messages=[
                                 {"role": "user", "content": "test"}
