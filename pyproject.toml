@@ -1,0 +1,17 @@
+# Minimal pyproject.toml for test tooling.
+# The full scaffold (runtime deps, CLI entry point, etc.) is added in task group 2.
+[project]
+name = "speclib"
+version = "0.1.0"
+requires-python = ">=3.14"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "hypothesis>=6.0",
+    "ruff>=0.9",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

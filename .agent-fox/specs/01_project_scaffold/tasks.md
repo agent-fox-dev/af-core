@@ -24,8 +24,8 @@ Groups are ordered so the scaffold exists before tests can import anything.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Set up test file structure
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Set up test file structure
     - Create `tests/` directory with `__init__.py`
     - Create `tests/test_scaffold.py` for project structure tests (TS-01-1 through TS-01-6)
     - Create `tests/test_config.py` for configuration tests (TS-01-7 through TS-01-10, TS-01-P1, TS-01-P2)
@@ -33,28 +33,28 @@ Groups are ordered so the scaffold exists before tests can import anything.
     - Create `tests/conftest.py` with fixtures for temp dirs and env var patching
     - _Test Spec: TS-01-1 through TS-01-17_
 
-  - [ ] 1.2 Translate acceptance-criterion tests
+  - [x] 1.2 Translate acceptance-criterion tests
     - One test function per TS-01-{N} entry
     - Tests MUST fail (modules don't exist yet)
     - _Test Spec: TS-01-1 through TS-01-17_
 
-  - [ ] 1.3 Translate edge-case tests
+  - [x] 1.3 Translate edge-case tests
     - One test function per TS-01-E{N} entry
     - _Test Spec: TS-01-E1 through TS-01-E6_
 
-  - [ ] 1.4 Translate property tests
+  - [x] 1.4 Translate property tests
     - One property test per TS-01-P{N} entry using hypothesis
     - _Test Spec: TS-01-P1 through TS-01-P3_
 
-  - [ ] 1.5 Write integration smoke tests
+  - [x] 1.5 Write integration smoke tests
     - TS-01-SMOKE-1 (config load end-to-end)
     - TS-01-SMOKE-2 (client creation end-to-end)
     - _Test Spec: TS-01-SMOKE-1, TS-01-SMOKE-2_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/`
 
 - [ ] 2. Create project scaffold
   - [ ] 2.1 Create pyproject.toml
