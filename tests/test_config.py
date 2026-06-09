@@ -96,6 +96,7 @@ class TestConfigEdgeCases:
         """
         settings_yaml.write_text(":::bad yaml")
         from speclib.config import load_config
+
         from speclib.errors import ConfigError
 
         with pytest.raises(ConfigError) as exc_info:

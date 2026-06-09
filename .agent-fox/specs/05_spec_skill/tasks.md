@@ -24,41 +24,41 @@ before the install command, and wiring verification is last.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Set up test file structure
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Set up test file structure
     - Create `tests/test_skill.py` for skill file content tests (TS-05-1 through TS-05-13, TS-05-19 through TS-05-21)
     - Create `tests/test_install_skill.py` for install-skill command tests (TS-05-14 through TS-05-18)
     - Add fixtures to `tests/conftest.py` for temp home directory and patched home
     - _Test Spec: TS-05-1 through TS-05-21_
 
-  - [ ] 1.2 Translate skill content tests
+  - [x] 1.2 Translate skill content tests
     - One test function per TS-05-{1..13} and TS-05-{19..21}
     - Tests read the skill file and verify content structure, commands, sections
     - Tests MUST fail (skill file doesn't exist yet)
     - _Test Spec: TS-05-1 through TS-05-13, TS-05-19 through TS-05-21_
 
-  - [ ] 1.3 Translate install-skill tests
+  - [x] 1.3 Translate install-skill tests
     - One test function per TS-05-{14..18}
     - Tests use Click test runner with patched home directories
     - Tests MUST fail (install-skill command doesn't exist yet)
     - _Test Spec: TS-05-14 through TS-05-18_
 
-  - [ ] 1.4 Translate edge-case tests
+  - [x] 1.4 Translate edge-case tests
     - One test function per TS-05-E{1..9}
     - _Test Spec: TS-05-E1 through TS-05-E9_
 
-  - [ ] 1.5 Translate property tests
+  - [x] 1.5 Translate property tests
     - One property test per TS-05-P{1..3}
     - _Test Spec: TS-05-P1 through TS-05-P3_
 
-  - [ ] 1.6 Write integration smoke test
+  - [x] 1.6 Write integration smoke test
     - TS-05-SMOKE-1 (full install flow)
     - _Test Spec: TS-05-SMOKE-1_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/`
 
 - [ ] 2. Create skill file and package structure
   - [ ] 2.1 Create speclib/skill/ package

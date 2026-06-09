@@ -6,6 +6,7 @@ Covers TS-03-15 through TS-03-17, TS-03-32, and TS-03-E10.
 from __future__ import annotations
 
 import pytest
+
 from speclib.prompts import (
     assessment_system_prompt,
     assessment_user_prompt,
@@ -14,7 +15,6 @@ from speclib.prompts import (
     refinement_system_prompt,
     refinement_user_prompt,
 )
-
 from speclib.session import Assessment, Question
 
 # ===================================================================

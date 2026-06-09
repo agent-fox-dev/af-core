@@ -11,8 +11,8 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from speclib.agent import SpecAgent
 
+from speclib.agent import SpecAgent
 from speclib.errors import AgentError, SpeclibError
 from speclib.session import Assessment
 
