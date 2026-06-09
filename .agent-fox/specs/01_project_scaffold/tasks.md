@@ -56,8 +56,8 @@ Groups are ordered so the scaffold exists before tests can import anything.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/`
 
-- [ ] 2. Create project scaffold
-  - [ ] 2.1 Create pyproject.toml
+- [x] 2. Create project scaffold
+  - [x] 2.1 Create pyproject.toml
     - Package name: speclib
     - requires-python: ">=3.14"
     - Dependencies: afspec, anthropic[vertex,bedrock], click, pyyaml
@@ -67,13 +67,13 @@ Groups are ordered so the scaffold exists before tests can import anything.
     - Ruff and mypy configuration
     - _Requirements: 01-REQ-1.1, 01-REQ-1.2, 01-REQ-1.3, 01-REQ-1.4_
 
-  - [ ] 2.2 Create Makefile
+  - [x] 2.2 Create Makefile
     - `check` target: lint + test
     - `test` target: `uv run pytest -q`
     - `lint` target: `uv run ruff check && uv run mypy speclib/`
     - _Requirements: 01-REQ-1.5, 01-REQ-1.6_
 
-  - [ ] 2.3 Create package directory structure
+  - [x] 2.3 Create package directory structure
     - `speclib/__init__.py` — package root with version and key re-exports
     - `speclib/errors.py` — SpeclibError, ConfigError
     - `speclib/config.py` — placeholder (implemented in group 3)
@@ -81,16 +81,16 @@ Groups are ordered so the scaffold exists before tests can import anything.
     - `speclib/cli.py` — minimal Click group for entry point (expanded in spec 04)
     - _Requirements: 01-REQ-4.1, 01-REQ-4.2_
 
-  - [ ] 2.4 Run uv sync to install dependencies
+  - [x] 2.4 Run uv sync to install dependencies
     - Verify `uv sync` succeeds
     - Verify `uv run af-spec --help` works
     - _Requirements: 01-REQ-1.1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Scaffold tests pass (TS-01-1 through TS-01-6): `uv run pytest -q tests/test_scaffold.py`
-    - [ ] Exception hierarchy tests pass (TS-01-16, TS-01-17)
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check`
+  - [x] 2.V Verify task group 2
+    - [x] Scaffold tests pass (TS-01-1 through TS-01-6): `uv run pytest -q tests/test_scaffold.py`
+    - [x] Exception hierarchy tests pass (TS-01-16, TS-01-17)
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check`
 
 - [ ] 3. Implement configuration and auth modules
   - [ ] 3.1 Implement speclib/config.py
