@@ -27,8 +27,8 @@ wiring verification.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests — infrastructure and campaign commands
-  - [ ] 1.1 Set up CLI test infrastructure
+- [x] 1. Write failing spec tests — infrastructure and campaign commands
+  - [x] 1.1 Set up CLI test infrastructure
     - Create `tests/test_cli.py` for all CLI tests
     - Import Click's `CliRunner` and `main` from `speclib.cli`
     - Create fixtures for: temp campaign directory, temp PRD file, mocked
@@ -37,7 +37,7 @@ wiring verification.
     - Create helper to set up a spec directory with _session.json and artifacts
     - _Test Spec: all TS-04-* entries_
 
-  - [ ] 1.2 Translate campaign command tests
+  - [x] 1.2 Translate campaign command tests
     - `test_init_creates_campaign` (TS-04-1)
     - `test_init_defaults_name_to_basename` (TS-04-2)
     - `test_init_defaults_description_empty` (TS-04-3)
@@ -51,7 +51,7 @@ wiring verification.
     - Tests MUST fail (CLI commands don't exist yet beyond stub)
     - _Test Spec: TS-04-1 through TS-04-10_
 
-  - [ ] 1.3 Translate cross-cutting and resolution tests
+  - [x] 1.3 Translate cross-cutting and resolution tests
     - `test_spec_not_found_lists_available` (TS-04-44)
     - `test_campaign_dir_option_overrides_cwd` (TS-04-45)
     - `test_no_campaign_dir_error` (TS-04-46)
@@ -62,10 +62,10 @@ wiring verification.
     - `test_exit_code_2_internal_error` (TS-04-51)
     - _Test Spec: TS-04-44 through TS-04-51_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All infrastructure and campaign spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — CLI commands are stubs
-    - [ ] No linter warnings introduced: `uv run ruff check tests/test_cli.py`
+  - [x] 1.V Verify task group 1
+    - [x] All infrastructure and campaign spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — CLI commands are stubs
+    - [x] No linter warnings introduced: `uv run ruff check tests/test_cli.py`
 
 - [ ] 2. Write failing spec tests — command and integration tests
   - [ ] 2.1 Translate spec new command tests
