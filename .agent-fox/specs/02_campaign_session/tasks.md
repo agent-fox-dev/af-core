@@ -27,29 +27,29 @@ structure and error hierarchy (`SpeclibError`).
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests — campaign and acceptance criteria
-  - [ ] 1.1 Create test files and fixtures
+- [x] 1. Write failing spec tests — campaign and acceptance criteria
+  - [x] 1.1 Create test files and fixtures
     - Create `tests/test_campaign.py` for campaign tests (TS-02-1 through TS-02-9, TS-02-E1 through TS-02-E6)
     - Create `tests/test_session.py` for session tests (TS-02-10 through TS-02-19, TS-02-E7 through TS-02-E11)
     - Add fixtures to `tests/conftest.py`: `tmp_campaign_dir`, `campaign`, `session`, `session_with_artifacts`
     - _Test Spec: TS-02-1 through TS-02-19_
 
-  - [ ] 1.2 Translate campaign acceptance-criterion tests
+  - [x] 1.2 Translate campaign acceptance-criterion tests
     - One test function per TS-02-{1..9}
     - _Test Spec: TS-02-1 through TS-02-9_
 
-  - [ ] 1.3 Translate session acceptance-criterion tests
+  - [x] 1.3 Translate session acceptance-criterion tests
     - One test function per TS-02-{10..19}
     - _Test Spec: TS-02-10 through TS-02-19_
 
-  - [ ] 1.4 Translate edge-case tests
+  - [x] 1.4 Translate edge-case tests
     - One test function per TS-02-E{1..11}
     - _Test Spec: TS-02-E1 through TS-02-E11_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All acceptance and edge-case tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/`
+  - [x] 1.V Verify task group 1
+    - [x] All acceptance and edge-case tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/`
 
 - [ ] 2. Write failing spec tests — properties and smoke tests
   - [ ] 2.1 Translate property tests
