@@ -127,38 +127,38 @@ Groups are ordered so the scaffold exists before tests can import anything.
   - Update `speclib/__init__.py` to export `SpecToolConfig`, `load_config`, `create_client`, `SpeclibError`, `ConfigError`
   - Update `README.md` with installation instructions (uv-only) and configuration docs
 
-- [ ] 5. Wiring verification
+- [x] 5. Wiring verification
 
-  - [ ] 5.1 Trace every execution path from design.md end-to-end
+  - [x] 5.1 Trace every execution path from design.md end-to-end
     - Path 1: `load_config` reads YAML → applies env overrides → returns SpecToolConfig
     - Path 2: `create_client` → `load_config` (if no config) → selects auth method → creates client → returns tuple
     - Verify each function in the chain is actually called by the previous one
     - _Requirements: all_
 
-  - [ ] 5.2 Verify return values propagate correctly
+  - [x] 5.2 Verify return values propagate correctly
     - `load_config()` returns SpecToolConfig consumed by `create_client()`
     - `create_client()` returns (client, model) tuple consumed by callers
     - _Requirements: all_
 
-  - [ ] 5.3 Run the integration smoke tests
+  - [x] 5.3 Run the integration smoke tests
     - All TS-01-SMOKE-* tests pass with real components
     - _Test Spec: TS-01-SMOKE-1, TS-01-SMOKE-2_
 
-  - [ ] 5.4 Stub / dead-code audit
+  - [x] 5.4 Stub / dead-code audit
     - Search speclib/ for `return []`, `return None` on non-Optional returns, `pass`, `# TODO`, `NotImplementedError`
     - Each hit must be justified or replaced
     - CLI placeholder (`speclib/cli.py`) is expected to be minimal — document as intentional
 
-  - [ ] 5.5 Cross-spec entry point verification
+  - [x] 5.5 Cross-spec entry point verification
     - No cross-spec entry points in this foundational spec
     - Verify `create_client` and `load_config` are importable from `speclib`
     - _Requirements: all_
 
-  - [ ] 5.V Verify wiring group
-    - [ ] All smoke tests pass
-    - [ ] No unjustified stubs remain in speclib/
-    - [ ] All execution paths from design.md are live
-    - [ ] All existing tests still pass: `uv run pytest -q`
+  - [x] 5.V Verify wiring group
+    - [x] All smoke tests pass
+    - [x] No unjustified stubs remain in speclib/
+    - [x] All execution paths from design.md are live
+    - [x] All existing tests still pass: `uv run pytest -q`
 
 ## Traceability
 
