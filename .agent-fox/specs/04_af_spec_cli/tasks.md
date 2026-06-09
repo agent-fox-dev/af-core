@@ -191,8 +191,8 @@ wiring verification.
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings: `uv run ruff check speclib/cli.py`
 
-- [ ] 5. Implement spec authoring commands (new, assess, refine, accept)
-  - [ ] 5.1 Implement new command
+- [x] 5. Implement spec authoring commands (new, assess, refine, accept)
+  - [x] 5.1 Implement new command
     - `@main.command("new")` with `prd_file`, `--name`, `--one-shot`
     - Validate PRD file exists
     - Derive name from filename if not provided (strip extension, snake_case)
@@ -200,7 +200,7 @@ wiring verification.
     - Print created spec directory name
     - _Requirements: 04-REQ-3.1, 04-REQ-3.2, 04-REQ-3.3, 04-REQ-3.4, 04-REQ-3.E1_
 
-  - [ ] 5.2 Implement assess command
+  - [x] 5.2 Implement assess command
     - `@main.command("assess")` with `spec` argument
     - Resolve spec, resume session
     - `asyncio.run(session.assess())` — bridge async
@@ -208,7 +208,7 @@ wiring verification.
     - Handle state and agent errors
     - _Requirements: 04-REQ-4.1, 04-REQ-4.2, 04-REQ-4.3, 04-REQ-4.E1_
 
-  - [ ] 5.3 Implement refine command
+  - [x] 5.3 Implement refine command
     - `@main.command("refine")` with `spec`, `--answers`
     - Read and parse JSON answers file
     - Validate answers schema (must be dict of str→str)
@@ -218,7 +218,7 @@ wiring verification.
     - Handle state, file, JSON, and schema errors
     - _Requirements: 04-REQ-5.1, 04-REQ-5.2, 04-REQ-5.3, 04-REQ-5.4, 04-REQ-5.5, 04-REQ-5.E1_
 
-  - [ ] 5.4 Implement accept command
+  - [x] 5.4 Implement accept command
     - `@main.command("accept")` with `spec` argument
     - Resolve spec, resume session
     - Call `session.accept_prd()`
@@ -226,15 +226,15 @@ wiring verification.
     - Handle state errors
     - _Requirements: 04-REQ-6.1, 04-REQ-6.2_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] New command tests pass (TS-04-11 through TS-04-16)
-    - [ ] Assess command tests pass (TS-04-17 through TS-04-20)
-    - [ ] Refine command tests pass (TS-04-21 through TS-04-26)
-    - [ ] Accept command tests pass (TS-04-27, TS-04-28)
-    - [ ] Property test P5 (state gates) passes for assess, refine, accept
-    - [ ] Smoke test SMOKE-2 (new and status) passes
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check speclib/cli.py`
+  - [x] 5.V Verify task group 5
+    - [x] New command tests pass (TS-04-11 through TS-04-16)
+    - [x] Assess command tests pass (TS-04-17 through TS-04-20)
+    - [x] Refine command tests pass (TS-04-21 through TS-04-26)
+    - [x] Accept command tests pass (TS-04-27, TS-04-28)
+    - [x] Property test P5 (state gates) passes for assess, refine, accept
+    - [x] Smoke test SMOKE-2 (new and status) passes
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check speclib/cli.py`
 
 - [ ] 6. Implement spec lifecycle commands (generate, validate, render, show, status)
   - [ ] 6.1 Implement generate command

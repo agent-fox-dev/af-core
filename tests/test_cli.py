@@ -1846,12 +1846,22 @@ class TestPropertyStateGateEnforcement:
         Property 5 from design.md.
         Validates: 04-REQ-4.3, 04-REQ-5.4, 04-REQ-6.2, 04-REQ-7.3
         """
+        # Create an answers file for the refine command
+        answers_file = campaign_dir_with_specs / "_test_answers.json"
+        answers_file.write_text(json.dumps({"q1": "answer1"}))
+
         state_gates = [
             (
                 "assess",
                 [],
                 "generated",
                 "Cannot call assess() in state 'generated'",
+            ),
+            (
+                "refine",
+                ["--answers", str(answers_file)],
+                "init",
+                "Cannot call refine() in state 'init'",
             ),
             (
                 "accept",
@@ -1873,6 +1883,10 @@ class TestPropertyStateGateEnforcement:
                 session = _mock_session(state=wrong_state)
                 if cmd == "assess":
                     session.assess = AsyncMock(
+                        side_effect=SessionError(error_msg)
+                    )
+                elif cmd == "refine":
+                    session.refine = AsyncMock(
                         side_effect=SessionError(error_msg)
                     )
                 elif cmd == "accept":
