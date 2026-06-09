@@ -111,35 +111,35 @@ before the install command, and wiring verification is last.
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings introduced: `uv run ruff check && uv run mypy speclib/`
 
-- [ ] 4. Wiring verification
+- [x] 4. Wiring verification
 
-  - [ ] 4.1 Trace execution path from design.md
+  - [x] 4.1 Trace execution path from design.md
     - Path 3: install-skill resolves SKILL_FILE_PATH → detects agent → copies file → prints message
     - Verify each step in the chain is exercised by TS-05-SMOKE-1
     - _Requirements: all_
 
-  - [ ] 4.2 Verify skill file content completeness
+  - [x] 4.2 Verify skill file content completeness
     - Manually inspect skill file against all 05-REQ-* content requirements
     - Ensure every command example is syntactically correct
     - Ensure workflow instructions match the session state machine from spec 02
     - _Requirements: all content requirements_
 
-  - [ ] 4.3 Stub / dead-code audit
+  - [x] 4.3 Stub / dead-code audit
     - Search speclib/skill/ for `pass`, `# TODO`, `NotImplementedError`
     - Each hit must be justified or replaced
     - _Requirements: all_
 
-  - [ ] 4.4 Cross-spec entry point verification
+  - [x] 4.4 Cross-spec entry point verification
     - Verify `SKILL_FILE_PATH` is importable from `speclib.skill`
     - Verify `install-skill` subcommand appears in `af-spec --help` output
     - Verify skill file references to af-spec commands match the CLI defined in spec 04
     - _Requirements: all_
 
-  - [ ] 4.V Verify wiring group
-    - [ ] All smoke tests pass
-    - [ ] No unjustified stubs remain in speclib/skill/
-    - [ ] All execution paths from design.md are live
-    - [ ] All existing tests still pass: `uv run pytest -q`
+  - [x] 4.V Verify wiring group
+    - [x] All smoke tests pass
+    - [x] No unjustified stubs remain in speclib/skill/
+    - [x] All execution paths from design.md are live
+    - [x] All existing tests still pass: `uv run pytest -q`
 
 ## Traceability
 
