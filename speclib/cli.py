@@ -194,14 +194,22 @@ def _derive_spec_name(filename: str) -> str:
     default=None,
     help="Campaign directory (default: CWD)",
 )
+@click.option(
+    "--quiet",
+    "-q",
+    is_flag=True,
+    default=False,
+    help="Suppress progress output",
+)
 @click.version_option(package_name="speclib")
 @click.pass_context
-def main(ctx: click.Context, campaign_dir: str | None) -> None:
+def main(ctx: click.Context, campaign_dir: str | None, quiet: bool) -> None:
     """af-spec: AI-powered spec creation tool."""
     ctx.ensure_object(dict)
     ctx.obj["campaign_dir"] = (
         Path(campaign_dir) if campaign_dir else Path.cwd()
     )
+    ctx.obj["quiet"] = quiet
 
 
 # ---------------------------------------------------------------------------

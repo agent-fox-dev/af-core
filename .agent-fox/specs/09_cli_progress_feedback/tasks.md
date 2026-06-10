@@ -62,13 +62,13 @@ self-contained — it wraps Rich's `Live` + `Spinner` behind a context manager.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/`
 
-- [ ] 2. Implement StatusSpinner and --quiet flag
-  - [ ] 2.1 Add `rich` dependency
+- [x] 2. Implement StatusSpinner and --quiet flag
+  - [x] 2.1 Add `rich` dependency
     - Add `rich>=13.0` to `pyproject.toml` dependencies
     - Run `uv sync`
     - _Requirements: 09-REQ-4.1_
 
-  - [ ] 2.2 Create `speclib/ui.py` with `StatusSpinner`
+  - [x] 2.2 Create `speclib/ui.py` with `StatusSpinner`
     - Context manager using `Rich.Console(stderr=True)` + `Live` + `Spinner`
     - `update(message)` to change spinner text
     - `log(message)` to print permanent line above spinner
@@ -76,15 +76,15 @@ self-contained — it wraps Rich's `Live` + `Spinner` behind a context manager.
     - Non-TTY detection: print plain text lines, no animation
     - _Requirements: 09-REQ-4.1, 09-REQ-4.2, 09-REQ-2.1, 09-REQ-2.2_
 
-  - [ ] 2.3 Add `--quiet` / `-q` global option to CLI
+  - [x] 2.3 Add `--quiet` / `-q` global option to CLI
     - Add to `main` Click group
     - Store in `ctx.obj["quiet"]`
     - _Requirements: 09-REQ-3.1, 09-REQ-3.4_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] StatusSpinner tests pass: `uv run pytest -q tests/test_ui.py`
-    - [ ] `--quiet` flag tests pass
-    - [ ] No linter warnings: `uv run ruff check speclib/ tests/`
+  - [x] 2.V Verify task group 2
+    - [x] StatusSpinner tests pass: `uv run pytest -q tests/test_ui.py`
+    - [x] `--quiet` flag tests pass
+    - [x] No linter warnings: `uv run ruff check speclib/ tests/`
 
 - [ ] 3. Wire spinner into CLI commands
   - [ ] 3.1 Add spinner to `assess_cmd`

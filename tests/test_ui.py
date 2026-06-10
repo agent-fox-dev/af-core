@@ -12,6 +12,7 @@ import io
 import sys
 
 import pytest
+
 from speclib.ui import StatusSpinner
 
 # ---------------------------------------------------------------------------
