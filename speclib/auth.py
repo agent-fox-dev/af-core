@@ -1,8 +1,8 @@
 """Anthropic client factory with auth method autodetection.
 
-Creates the appropriate Anthropic SDK client based on configuration:
-``Anthropic`` for API key auth, ``AnthropicBedrock`` for AWS Bedrock,
-or ``AnthropicVertex`` for Google Vertex AI.
+Creates the appropriate async Anthropic SDK client based on configuration:
+``AsyncAnthropic`` for API key auth, ``AsyncAnthropicBedrock`` for AWS
+Bedrock, or ``AsyncAnthropicVertex`` for Google Vertex AI.
 """
 
 from __future__ import annotations
@@ -18,9 +18,9 @@ from speclib.errors import ConfigError
 _VALID_AUTH_METHODS = ("api_key", "bedrock", "vertex")
 
 ClientType = Union[
-    anthropic.Anthropic,
-    anthropic.AnthropicBedrock,
-    anthropic.AnthropicVertex,
+    anthropic.AsyncAnthropic,
+    anthropic.AsyncAnthropicBedrock,
+    anthropic.AsyncAnthropicVertex,
 ]
 
 
@@ -68,8 +68,8 @@ def create_client(
 
 def _create_api_key_client(
     config: SpecToolConfig,
-) -> anthropic.Anthropic:
-    """Create an Anthropic client using an API key.
+) -> anthropic.AsyncAnthropic:
+    """Create an async Anthropic client using an API key.
 
     Checks ANTHROPIC_API_KEY env var first, then falls back to the config.
 
@@ -85,21 +85,21 @@ def _create_api_key_client(
             "~/.af/settings.yaml."
         )
         raise ConfigError(msg)
-    return anthropic.Anthropic(api_key=api_key)
+    return anthropic.AsyncAnthropic(api_key=api_key)
 
 
-def _create_bedrock_client() -> anthropic.AnthropicBedrock:
-    """Create an AnthropicBedrock client using AWS credentials.
+def _create_bedrock_client() -> anthropic.AsyncAnthropicBedrock:
+    """Create an async AnthropicBedrock client using AWS credentials.
 
     Uses the standard boto3 credential chain from the environment.
     """
-    return anthropic.AnthropicBedrock()
+    return anthropic.AsyncAnthropicBedrock()
 
 
 def _create_vertex_client(
     config: SpecToolConfig,
-) -> anthropic.AnthropicVertex:
-    """Create an AnthropicVertex client using GCP credentials.
+) -> anthropic.AsyncAnthropicVertex:
+    """Create an async AnthropicVertex client using GCP credentials.
 
     Requires AF_SPEC_VERTEX_PROJECT and AF_SPEC_VERTEX_REGION env vars
     or corresponding config values.
@@ -124,7 +124,7 @@ def _create_vertex_client(
         raise ConfigError(msg)
 
     if region:
-        return anthropic.AnthropicVertex(
+        return anthropic.AsyncAnthropicVertex(
             project_id=project, region=region
         )
-    return anthropic.AnthropicVertex(project_id=project)
+    return anthropic.AsyncAnthropicVertex(project_id=project)

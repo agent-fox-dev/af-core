@@ -5,7 +5,8 @@ TS-01-P3, TS-01-SMOKE-2.
 
 Note: Auth client tests mock the anthropic SDK constructors to avoid real
 API calls. The mock targets assume speclib.auth uses ``import anthropic``
-style imports.
+style imports (async variants: AsyncAnthropic, AsyncAnthropicBedrock,
+AsyncAnthropicVertex).
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ class TestClientFactory:
         monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
         from speclib.auth import create_client
 
-        with patch("speclib.auth.anthropic.Anthropic") as mock_cls:
+        with patch("speclib.auth.anthropic.AsyncAnthropic") as mock_cls:
             client, model = create_client()
             mock_cls.assert_called_once()
             assert client is mock_cls.return_value
@@ -55,7 +56,7 @@ class TestClientFactory:
         monkeypatch.setenv("AF_SPEC_AUTH", "bedrock")
         from speclib.auth import create_client
 
-        with patch("speclib.auth.anthropic.AnthropicBedrock") as mock_cls:
+        with patch("speclib.auth.anthropic.AsyncAnthropicBedrock") as mock_cls:
             client, model = create_client()
             mock_cls.assert_called_once()
             assert client is mock_cls.return_value
@@ -77,7 +78,7 @@ class TestClientFactory:
         monkeypatch.setenv("AF_SPEC_VERTEX_REGION", "us-east5")
         from speclib.auth import create_client
 
-        with patch("speclib.auth.anthropic.AnthropicVertex") as mock_cls:
+        with patch("speclib.auth.anthropic.AsyncAnthropicVertex") as mock_cls:
             client, model = create_client()
             mock_cls.assert_called_once()
             assert client is mock_cls.return_value
@@ -97,7 +98,7 @@ class TestClientFactory:
         from speclib.config import SpecToolConfig
 
         config = SpecToolConfig(auth_method="api_key", api_key="test-key")
-        with patch("speclib.auth.anthropic.Anthropic") as mock_cls:
+        with patch("speclib.auth.anthropic.AsyncAnthropic") as mock_cls:
             client, model = create_client(config)
             mock_cls.assert_called_once()
             assert client is mock_cls.return_value
@@ -125,7 +126,7 @@ class TestClientFactory:
         assert config.auth_method == "bedrock"
 
         # Verify create_client actually uses the YAML auth method
-        with patch("speclib.auth.anthropic.AnthropicBedrock") as mock_cls:
+        with patch("speclib.auth.anthropic.AsyncAnthropicBedrock") as mock_cls:
             client, _model = create_client(config)
             mock_cls.assert_called_once()
             assert client is mock_cls.return_value
@@ -203,9 +204,9 @@ class TestClientProperties:
     @pytest.mark.parametrize(
         ("auth_method", "expected_cls_name"),
         [
-            ("api_key", "Anthropic"),
-            ("bedrock", "AnthropicBedrock"),
-            ("vertex", "AnthropicVertex"),
+            ("api_key", "AsyncAnthropic"),
+            ("bedrock", "AsyncAnthropicBedrock"),
+            ("vertex", "AsyncAnthropicVertex"),
         ],
     )
     def test_ts01_p3_client_type_matches_auth(
@@ -256,7 +257,7 @@ class TestClientSmoke:
         monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
         from speclib.auth import create_client
 
-        with patch("speclib.auth.anthropic.Anthropic") as mock_cls:
+        with patch("speclib.auth.anthropic.AsyncAnthropic") as mock_cls:
             client, model = create_client()
             assert client is mock_cls.return_value
             assert model == "claude-sonnet-4-6"
