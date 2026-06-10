@@ -847,7 +847,6 @@ class TestPendingQuestions:
         history_after = json.loads(session_file.read_text())
         assert history_before == history_after
 
-<<<<<<< HEAD
     @given(
         question_ids=st.lists(
             st.text(
@@ -981,7 +980,7 @@ class TestPendingQuestions:
             expected_required = q.get("required", False)
             assert r["options"] == expected_options
             assert r["required"] == expected_required
-=======
+
 
 # ---------------------------------------------------------------------------
 # QA Exchange helpers
@@ -1681,4 +1680,3 @@ class TestQAExchangeSmoke:
         assert data["qa_exchanges"][0]["answers"] == {"q1": "answer1"}
         assert data["qa_exchanges"][0]["timestamp"] == "2026-06-10T12:00:00+00:00"
         assert len(data["assessment_history"]) == 2
->>>>>>> feature/07_refine_answer_recording/1

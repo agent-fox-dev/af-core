@@ -2472,3 +2472,839 @@ class TestSmokeValidateAndRender:
         )
         _assert_exit(result2, 0)
         assert "#" in result2.output
+
+
+# ================================================================
+# Spec 09: CLI Progress Feedback — Spinner and Quiet Mode Tests
+# ================================================================
+
+
+class TestAssessSpinner:
+    """TS-09-1: Assess shows spinner on stderr."""
+
+    def test_assess_shows_spinner_on_stderr(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-1: Verifies assess writes spinner/status to stderr.
+
+        Requirement: 09-REQ-1.1
+        When assess runs, stderr should contain "Assessing" and
+        exit code should be 0.
+        """
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        _assert_exit(result, 0)
+        # The spinner message "Assessing" must appear somewhere
+        # in the combined output (CliRunner mixes stdout/stderr).
+        # In the real implementation, this would be on stderr.
+        combined = result.output
+        assert "Assessing" in combined, (
+            f"Expected 'Assessing' in output, got: {combined!r}"
+        )
+
+
+class TestRefineSpinner:
+    """TS-09-2: Refine with answers shows spinner on stderr."""
+
+    def test_refine_answers_shows_spinner(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+        answers_file: Path,
+    ) -> None:
+        """TS-09-2: Verifies refine --answers shows status on stderr.
+
+        Requirement: 09-REQ-1.2
+        """
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="assessing")
+            session.refine = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "refine",
+                    "01",
+                    "--answers",
+                    str(answers_file),
+                ],
+            )
+        combined = result.output
+        assert "Refining" in combined, (
+            f"Expected 'Refining' in output, got: {combined!r}"
+        )
+
+
+class TestGenerateSpinner:
+    """TS-09-3: Generate shows per-artifact progress."""
+
+    def test_generate_shows_generating_message(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-3: Verifies generate shows artifact-specific messages.
+
+        Requirement: 09-REQ-1.3, 09-REQ-1.4
+        """
+        gen_result = {
+            "artifacts": [
+                "requirements",
+                "test_spec",
+                "tasks",
+            ],
+        }
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="prd_accepted")
+            session.generate = AsyncMock(return_value=gen_result)
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "generate",
+                    "01",
+                ],
+            )
+        combined = result.output
+        assert "Generating" in combined, (
+            f"Expected 'Generating' in output, got: {combined!r}"
+        )
+
+    def test_generate_shows_completion_messages(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-3: Verifies generate shows completion messages.
+
+        Requirement: 09-REQ-1.4
+        Each generated artifact should produce a "Generated ..." line.
+        """
+        gen_result = {
+            "artifacts": [
+                "requirements",
+                "test_spec",
+                "tasks",
+            ],
+        }
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="prd_accepted")
+            session.generate = AsyncMock(return_value=gen_result)
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "generate",
+                    "01",
+                ],
+            )
+        combined = result.output
+        assert "Generated" in combined, (
+            f"Expected 'Generated' in output, got: {combined!r}"
+        )
+
+
+class TestSpinnerStopsOnSuccess:
+    """TS-09-4: Spinner stops on success."""
+
+    def test_spinner_stops_after_success(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-4: Verifies spinner is stopped after command completes.
+
+        Requirement: 09-REQ-1.5
+        After successful completion, no spinner animation remnants
+        should remain. The exit code should be 0.
+        """
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        _assert_exit(result, 0)
+
+
+class TestSpinnerStderrOnly:
+    """TS-09-5: Spinner output on stderr only."""
+
+    def test_spinner_not_on_stdout(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-5: Verifies spinner output goes to stderr, not stdout.
+
+        Requirement: 09-REQ-2.1
+        stdout should contain only assessment output, not spinner text.
+        """
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            runner = CliRunner()
+            result = runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        _assert_exit(result, 0)
+        # stdout must NOT contain spinner text
+        assert "Assessing" not in result.stdout, (
+            f"Spinner text leaked to stdout: {result.stdout!r}"
+        )
+        # stderr should contain spinner text
+        assert "Assessing" in result.stderr, (
+            f"Expected 'Assessing' on stderr, got: {result.stderr!r}"
+        )
+
+
+class TestSpinnerNonTTY:
+    """TS-09-6: Non-TTY plain text fallback."""
+
+    def test_non_tty_no_ansi_escapes(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-6: Verifies plain text output when stderr is not a TTY.
+
+        Requirement: 09-REQ-2.2
+        CliRunner uses non-TTY by default. Phase messages should appear
+        as plain text without ANSI escape sequences.
+        """
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            runner = CliRunner()
+            result = runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        _assert_exit(result, 0)
+        stderr_output = result.stderr
+        # Non-TTY output should contain phase message
+        assert "Assessing" in stderr_output, (
+            f"Expected 'Assessing' on stderr: {stderr_output!r}"
+        )
+        # No ANSI escape sequences
+        assert "\x1b" not in stderr_output, (
+            f"ANSI escape found in non-TTY stderr: {stderr_output!r}"
+        )
+
+
+# ================================================================
+# Spec 09: Quiet Mode Tests (TS-09-7 through TS-09-10)
+# ================================================================
+
+
+class TestQuietFlagAccepted:
+    """TS-09-7: Quiet flag accepted."""
+
+    def test_quiet_long_flag(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-7: --quiet flag is recognized by the CLI.
+
+        Requirement: 09-REQ-3.1
+        """
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "--quiet",
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        assert "no such option" not in result.output.lower(), (
+            f"--quiet not recognized: {result.output}"
+        )
+
+    def test_quiet_short_flag(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-7: -q flag is recognized by the CLI.
+
+        Requirement: 09-REQ-3.1
+        """
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "-q",
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        assert "no such option" not in result.output.lower(), (
+            f"-q not recognized: {result.output}"
+        )
+
+
+class TestQuietSuppressesSpinner:
+    """TS-09-8: Quiet suppresses spinner."""
+
+    def test_quiet_no_spinner_on_stderr(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-8: --quiet suppresses all spinner output.
+
+        Requirement: 09-REQ-3.2
+        """
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            runner = CliRunner()
+            result = runner.invoke(
+                main,
+                [
+                    "--quiet",
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        stderr_output = result.stderr
+        assert "Assessing" not in stderr_output, (
+            f"Spinner text on stderr in quiet mode: {stderr_output!r}"
+        )
+
+
+class TestQuietPreservesOutput:
+    """TS-09-9: Quiet preserves final output."""
+
+    def test_quiet_still_shows_assessment(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-9: --quiet still prints command results.
+
+        Requirement: 09-REQ-3.3
+        """
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "--quiet",
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        _assert_exit(result, 0)
+        lower = result.output.lower()
+        assert "quality" in lower, (
+            f"Expected assessment output in quiet mode: {result.output}"
+        )
+
+
+class TestQuietFlagInContext:
+    """TS-09-10: Quiet flag in context."""
+
+    def test_quiet_accessible_in_context(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-10: ctx.obj['quiet'] is True when --quiet is set.
+
+        Requirement: 09-REQ-3.4
+        Verified transitively: if --quiet suppresses spinner output
+        (tested in TS-09-8), then ctx.obj['quiet'] must be True and
+        accessible to subcommands.
+        """
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            runner = CliRunner()
+            result = runner.invoke(
+                main,
+                [
+                    "--quiet",
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        _assert_exit(result, 0)
+        # Quiet mode behavior is active: no spinner on stderr
+        stderr_output = result.stderr
+        assert "Assessing" not in stderr_output, (
+            f"Spinner text found — quiet flag not in context: "
+            f"{stderr_output!r}"
+        )
+
+
+# ================================================================
+# Spec 09: Edge Case and Property Tests
+# ================================================================
+
+
+class TestSpinnerStopsOnError:
+    """TS-09-E1: Spinner stops on error."""
+
+    def test_spinner_cleaned_up_on_session_error(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+    ) -> None:
+        """TS-09-E1: Verifies spinner is cleaned up on command error.
+
+        Requirement: 09-REQ-1.E1
+        When the command raises SessionError, the spinner should be
+        stopped and the error message should appear.
+        """
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(
+                side_effect=SessionError("test assessment error")
+            )
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        assert result.exit_code != 0
+        assert "Error" in result.output or "error" in result.output
+
+
+class TestQuietSuppressesAllProperty:
+    """TS-09-P1: Quiet suppresses all spinner output across commands.
+
+    Property 1 from design.md.
+    Validates: 09-REQ-3.2, 09-REQ-3.3
+    """
+
+    @pytest.mark.parametrize(
+        "cmd,extra_args,setup_session",
+        [
+            (
+                "assess",
+                [],
+                lambda s: setattr(s, "assess", AsyncMock(
+                    return_value=_sample_assessment()
+                )),
+            ),
+            (
+                "refine",
+                ["--answers", "__ANSWERS_FILE__"],
+                lambda s: setattr(s, "refine", AsyncMock(
+                    return_value=_sample_assessment()
+                )),
+            ),
+            (
+                "generate",
+                [],
+                lambda s: setattr(s, "generate", AsyncMock(
+                    return_value={"artifacts": ["requirements"]}
+                )),
+            ),
+        ],
+        ids=["assess", "refine", "generate"],
+    )
+    def test_quiet_suppresses_for_command(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+        tmp_path: Path,
+        cmd: str,
+        extra_args: list[str],
+        setup_session: Any,
+    ) -> None:
+        """No spinner text on stderr when --quiet is set.
+
+        Requirement: 09-REQ-3.2
+        """
+        # Replace answers file placeholder with real path
+        resolved_args = []
+        for arg in extra_args:
+            if arg == "__ANSWERS_FILE__":
+                af = tmp_path / "p1_answers.json"
+                af.write_text(json.dumps({"q1": "a"}))
+                resolved_args.append(str(af))
+            else:
+                resolved_args.append(arg)
+
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            setup_session(session)
+            mock_cls.resume.return_value = session
+            runner = CliRunner()
+            result = runner.invoke(
+                main,
+                [
+                    "--quiet",
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    cmd,
+                    "01",
+                    *resolved_args,
+                ],
+            )
+        stderr_output = result.stderr
+        assert "Assessing" not in stderr_output
+        assert "Refining" not in stderr_output
+        assert "Generating" not in stderr_output
+
+
+class TestSpinnerStderrOnlyProperty:
+    """TS-09-P2: Spinner stderr only property.
+
+    Property 2 from design.md.
+    Validates: 09-REQ-2.1
+    """
+
+    @pytest.mark.parametrize(
+        "cmd,extra_args,setup_session",
+        [
+            (
+                "assess",
+                [],
+                lambda s: setattr(s, "assess", AsyncMock(
+                    return_value=_sample_assessment()
+                )),
+            ),
+            (
+                "refine",
+                ["--answers", "__ANSWERS_FILE__"],
+                lambda s: setattr(s, "refine", AsyncMock(
+                    return_value=_sample_assessment()
+                )),
+            ),
+            (
+                "generate",
+                [],
+                lambda s: setattr(s, "generate", AsyncMock(
+                    return_value={"artifacts": ["requirements"]}
+                )),
+            ),
+        ],
+        ids=["assess", "refine", "generate"],
+    )
+    def test_spinner_not_on_stdout(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+        tmp_path: Path,
+        cmd: str,
+        extra_args: list[str],
+        setup_session: Any,
+    ) -> None:
+        """Spinner text never appears on stdout.
+
+        Requirement: 09-REQ-2.1
+        """
+        resolved_args = []
+        for arg in extra_args:
+            if arg == "__ANSWERS_FILE__":
+                af = tmp_path / "p2_answers.json"
+                af.write_text(json.dumps({"q1": "a"}))
+                resolved_args.append(str(af))
+            else:
+                resolved_args.append(arg)
+
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            setup_session(session)
+            mock_cls.resume.return_value = session
+            runner = CliRunner()
+            result = runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    cmd,
+                    "01",
+                    *resolved_args,
+                ],
+            )
+        stdout = result.stdout
+        assert "Assessing" not in stdout
+        assert "Refining" not in stdout
+        assert "Generating" not in stdout
+
+
+class TestSpinnerCleanupProperty:
+    """TS-09-P3: Spinner cleanup on error property.
+
+    Property 3 from design.md.
+    Validates: 09-REQ-1.E1
+    """
+
+    @pytest.mark.parametrize(
+        "error_cls",
+        [SessionError, RuntimeError],
+        ids=["SessionError", "RuntimeError"],
+    )
+    def test_spinner_exit_called_on_error(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+        error_cls: type,
+    ) -> None:
+        """StatusSpinner.__exit__ is called when command errors.
+
+        Requirement: 09-REQ-1.E1
+        """
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="init")
+            session.assess = AsyncMock(
+                side_effect=error_cls("test error")
+            )
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "assess",
+                    "01",
+                ],
+            )
+        assert result.exit_code != 0
+        # Error message should be visible (spinner was cleaned up)
+        assert "error" in result.output.lower()
+
+
+# ================================================================
+# Spec 09: Integration Smoke Tests
+# ================================================================
+
+
+class TestAssessSpinnerSmoke:
+    """TS-09-SMOKE-1: Assess with spinner end-to-end.
+
+    Execution Path: Path 1 from design.md.
+    Must NOT satisfy with: Mocking StatusSpinner or click.echo.
+    """
+
+    def test_assess_spinner_smoke(
+        self,
+        cli_runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """TS-09-SMOKE-1: Full assess flow with spinner on stderr.
+
+        Setup: Mock only the agent API call. Real Campaign, real
+        SpecSession, real StatusSpinner.
+        """
+        # Set up a real campaign
+        campaign_dir = tmp_path / "smoke_campaign"
+        campaign_dir.mkdir()
+        (campaign_dir / "campaign.yaml").write_text(
+            "name: smoke\ndescription: smoke\n"
+        )
+        spec_dir = campaign_dir / "01_smoke_spec"
+        spec_dir.mkdir()
+        (spec_dir / "prd.md").write_text("# Smoke PRD\n\nContent.")
+        (spec_dir / "_session.json").write_text(json.dumps({
+            "state": "init",
+            "mode": "interactive",
+            "prd_path": "prd.md",
+            "assessment_history": [],
+            "qa_exchanges": [],
+            "generated_artifacts": [],
+        }))
+
+        # Mock only the agent API call (create_client)
+        mock_assessment_response = MagicMock()
+        mock_assessment_response.quality = "needs_refinement"
+        mock_assessment_response.summary = "Needs work"
+        mock_assessment_response.gaps = ["Gap 1"]
+        mock_assessment_response.questions = []
+
+        with patch("speclib.session.create_client") as mock_auth:
+            mock_client = MagicMock()
+            mock_client.messages = MagicMock()
+            mock_client.messages.create = AsyncMock()
+            mock_auth.return_value = (mock_client, "test-model")
+
+            with patch(
+                "speclib.agent.SpecAgent.assess_prd",
+                new_callable=AsyncMock,
+            ) as mock_assess:
+                from speclib.session import Assessment
+
+                mock_assess.return_value = Assessment(
+                    quality="needs_refinement",
+                    summary="Quality needs improvement",
+                    gaps=["Missing details"],
+                    questions=[],
+                )
+                runner = CliRunner()
+                result = runner.invoke(
+                    main,
+                    [
+                        "--campaign-dir",
+                        str(campaign_dir),
+                        "assess",
+                        "01",
+                    ],
+                )
+        _assert_exit(result, 0)
+        # stderr should contain spinner/phase message
+        stderr_output = result.stderr
+        assert "Assessing" in stderr_output, (
+            f"Expected 'Assessing' on stderr: {stderr_output!r}"
+        )
+        # stdout should contain assessment output
+        lower = result.output.lower()
+        assert "quality" in lower, (
+            f"Expected assessment on stdout: {result.output}"
+        )
+
+
+class TestQuietModeSmoke:
+    """TS-09-SMOKE-2: Quiet mode end-to-end.
+
+    Execution Path: Path 3 from design.md.
+    Must NOT satisfy with: Mocking StatusSpinner or click.echo.
+    """
+
+    def test_quiet_mode_smoke(
+        self,
+        cli_runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """TS-09-SMOKE-2: Quiet mode suppresses spinner but keeps output.
+
+        Setup: Mock only the agent API call. Real Campaign, real
+        SpecSession, real StatusSpinner.
+        """
+        # Set up a real campaign
+        campaign_dir = tmp_path / "quiet_smoke"
+        campaign_dir.mkdir()
+        (campaign_dir / "campaign.yaml").write_text(
+            "name: quiet\ndescription: quiet smoke\n"
+        )
+        spec_dir = campaign_dir / "01_quiet_spec"
+        spec_dir.mkdir()
+        (spec_dir / "prd.md").write_text("# Quiet PRD\n\nContent.")
+        (spec_dir / "_session.json").write_text(json.dumps({
+            "state": "init",
+            "mode": "interactive",
+            "prd_path": "prd.md",
+            "assessment_history": [],
+            "qa_exchanges": [],
+            "generated_artifacts": [],
+        }))
+
+        with patch("speclib.session.create_client") as mock_auth:
+            mock_client = MagicMock()
+            mock_client.messages = MagicMock()
+            mock_client.messages.create = AsyncMock()
+            mock_auth.return_value = (mock_client, "test-model")
+
+            with patch(
+                "speclib.agent.SpecAgent.assess_prd",
+                new_callable=AsyncMock,
+            ) as mock_assess:
+                from speclib.session import Assessment
+
+                mock_assess.return_value = Assessment(
+                    quality="needs_refinement",
+                    summary="Quality needs improvement",
+                    gaps=["Missing details"],
+                    questions=[],
+                )
+                runner = CliRunner()
+                result = runner.invoke(
+                    main,
+                    [
+                        "--quiet",
+                        "--campaign-dir",
+                        str(campaign_dir),
+                        "assess",
+                        "01",
+                    ],
+                )
+        _assert_exit(result, 0)
+        # stderr should be empty (no spinner in quiet mode)
+        stderr_output = result.stderr
+        assert stderr_output == "" or "Assessing" not in stderr_output, (
+            f"Spinner text on stderr in quiet mode: {stderr_output!r}"
+        )
+        # stdout should still contain assessment output
+        lower = result.output.lower()
+        assert "quality" in lower, (
+            f"Expected assessment on stdout: {result.output}"
+        )

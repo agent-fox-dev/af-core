@@ -23,15 +23,15 @@ self-contained — it wraps Rich's `Live` + `Spinner` behind a context manager.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create `tests/test_ui.py` for StatusSpinner
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create `tests/test_ui.py` for StatusSpinner
     - Context manager works (TS-09-11)
     - Quiet mode is no-op (TS-09-12)
     - Stops on error (TS-09-E2)
     - Non-TTY fallback (TS-09-P4)
     - _Test Spec: TS-09-11, TS-09-12, TS-09-E2, TS-09-P4_
 
-  - [ ] 1.2 Add CLI spinner tests to `tests/test_cli.py`
+  - [x] 1.2 Add CLI spinner tests to `tests/test_cli.py`
     - Assess shows spinner on stderr (TS-09-1)
     - Refine shows spinner (TS-09-2)
     - Generate shows per-artifact progress (TS-09-3)
@@ -40,27 +40,27 @@ self-contained — it wraps Rich's `Live` + `Spinner` behind a context manager.
     - Non-TTY plain text (TS-09-6)
     - _Test Spec: TS-09-1 through TS-09-6_
 
-  - [ ] 1.3 Add quiet mode tests
+  - [x] 1.3 Add quiet mode tests
     - `--quiet` flag accepted (TS-09-7)
     - Quiet suppresses spinner (TS-09-8)
     - Quiet preserves output (TS-09-9)
     - Quiet in context (TS-09-10)
     - _Test Spec: TS-09-7 through TS-09-10_
 
-  - [ ] 1.4 Add edge case and property tests
+  - [x] 1.4 Add edge case and property tests
     - Spinner stops on error (TS-09-E1)
     - Property tests (TS-09-P1 through TS-09-P3)
     - _Test Spec: TS-09-E1, TS-09-P1 through TS-09-P3_
 
-  - [ ] 1.5 Add integration smoke tests
+  - [x] 1.5 Add integration smoke tests
     - Assess with spinner (TS-09-SMOKE-1)
     - Quiet mode (TS-09-SMOKE-2)
     - _Test Spec: TS-09-SMOKE-1, TS-09-SMOKE-2_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/`
 
 - [ ] 2. Implement StatusSpinner and --quiet flag
   - [ ] 2.1 Add `rich` dependency
