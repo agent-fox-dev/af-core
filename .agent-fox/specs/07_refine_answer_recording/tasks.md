@@ -23,8 +23,8 @@ during `SpecSession.refine()`. The change is confined to `speclib/session.py`
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Add QA exchange recording tests to `tests/test_session.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Add QA exchange recording tests to `tests/test_session.py`
     - Test refine appends entry with correct keys (TS-07-1)
     - Test entry persisted to disk (TS-07-2)
     - Test assessment_index is correct (TS-07-3)
@@ -32,31 +32,31 @@ during `SpecSession.refine()`. The change is confined to `speclib/session.py`
     - Test timestamp uses patchable `_utcnow` (TS-07-5)
     - _Test Spec: TS-07-1 through TS-07-5_
 
-  - [ ] 1.2 Add no-side-effect tests
+  - [x] 1.2 Add no-side-effect tests
     - Test question export unchanged (TS-07-6)
     - Test pending_questions unaffected (TS-07-7)
     - _Test Spec: TS-07-6, TS-07-7_
 
-  - [ ] 1.3 Add edge case tests
+  - [x] 1.3 Add edge case tests
     - Test failed refine does not record exchange (TS-07-E1)
     - Test existing empty qa_exchanges loads fine (TS-07-E2)
     - _Test Spec: TS-07-E1, TS-07-E2_
 
-  - [ ] 1.4 Add property tests
+  - [x] 1.4 Add property tests
     - Exchange count matches refine count (TS-07-P1)
     - Assessment index consistency (TS-07-P2)
     - Exchange schema consistency (TS-07-P3)
     - Failed refine no-append (TS-07-P4)
     - _Test Spec: TS-07-P1 through TS-07-P4_
 
-  - [ ] 1.5 Add integration smoke test
+  - [x] 1.5 Add integration smoke test
     - Full refine through real session with mocked agent (TS-07-SMOKE-1)
     - _Test Spec: TS-07-SMOKE-1_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/`
 
 - [ ] 2. Implement QA exchange recording in `SpecSession.refine()`
   - [ ] 2.1 Add `_utcnow()` module-level function to `speclib/session.py`

@@ -3,7 +3,10 @@
 Test Spec Entries: TS-02-10 through TS-02-19 (acceptance criteria),
 TS-02-E7 through TS-02-E11 (edge cases),
 TS-02-P1, TS-02-P2, TS-02-P5, TS-02-P6 (property tests),
-TS-02-SMOKE-3 through TS-02-SMOKE-5 (integration smoke tests).
+TS-02-SMOKE-3 through TS-02-SMOKE-5 (integration smoke tests),
+TS-07-1 through TS-07-7, TS-07-E1, TS-07-E2 (QA exchange unit tests),
+TS-07-P1 through TS-07-P4 (QA exchange property tests),
+TS-07-SMOKE-1 (QA exchange integration smoke test).
 """
 
 from __future__ import annotations
@@ -11,15 +14,17 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from speclib.campaign import Campaign
-from speclib.errors import SessionError
+from speclib.errors import AgentError, SessionError
 from speclib.session import (
+    Assessment,
+    Question,
     SessionState,
     SpecSession,
     ValidationResult,
@@ -842,6 +847,7 @@ class TestPendingQuestions:
         history_after = json.loads(session_file.read_text())
         assert history_before == history_after
 
+<<<<<<< HEAD
     @given(
         question_ids=st.lists(
             st.text(
@@ -975,3 +981,704 @@ class TestPendingQuestions:
             expected_required = q.get("required", False)
             assert r["options"] == expected_options
             assert r["required"] == expected_required
+=======
+
+# ---------------------------------------------------------------------------
+# QA Exchange helpers
+# ---------------------------------------------------------------------------
+
+
+def _sample_assessment_dict(
+    quality: str = "needs_refinement",
+    summary: str = "Needs work",
+    gaps: list[str] | None = None,
+    questions: list[dict] | None = None,
+) -> dict:
+    """Build an assessment dict for persisting to _session.json."""
+    if gaps is None:
+        gaps = ["No goals"]
+    if questions is None:
+        questions = [
+            {
+                "id": "q1",
+                "text": "What are the goals?",
+                "context": "Goals section is missing",
+                "options": [],
+                "required": True,
+            }
+        ]
+    return {
+        "quality": quality,
+        "summary": summary,
+        "gaps": gaps,
+        "questions": questions,
+    }
+
+
+def _create_qa_exchange_session(
+    tmp_path: Path,
+    state: SessionState = SessionState.ASSESSING,
+    assessment_history: list[dict] | None = None,
+    qa_exchanges: list[dict] | None = None,
+) -> SpecSession:
+    """Create a SpecSession for QA exchange tests.
+
+    Sets up a session in the given state with specified assessment history
+    and qa_exchanges. Uses Campaign.new_spec, then patches _session.json.
+    """
+    import time
+
+    camp_dir = tmp_path / "camp"
+    if not (camp_dir / "campaign.yaml").exists():
+        Campaign.create(camp_dir, "Test", "Desc")
+    camp = Campaign.open(camp_dir)
+
+    spec_name = f"qa_{state.value}_{int(time.monotonic_ns())}"
+    session = camp.new_spec(spec_name, "# My PRD\n\n## Intent\nBuild something.")
+
+    if assessment_history is None:
+        assessment_history = [_sample_assessment_dict()]
+
+    session_file = session.spec_dir / "_session.json"
+    data = json.loads(session_file.read_text())
+    data["state"] = state.value
+    data["assessment_history"] = assessment_history
+    if qa_exchanges is not None:
+        data["qa_exchanges"] = qa_exchanges
+    session_file.write_text(json.dumps(data, indent=2))
+    return SpecSession.resume(session.spec_dir)
+
+
+def _mock_agent_for_refine(
+    updated_prd: str = "# Updated PRD\n## Goals\n1. REST API",
+    quality: str = "needs_refinement",
+    summary: str = "More work needed",
+    gaps: list[str] | None = None,
+    questions: list[dict] | None = None,
+):
+    """Create a mock agent instance that returns from refine_prd."""
+    if gaps is None:
+        gaps = ["Still has gaps"]
+    if questions is None:
+        questions = [
+            {
+                "id": "q2",
+                "text": "Next question?",
+                "context": "Follow up",
+                "options": [],
+                "required": False,
+            }
+        ]
+    new_assessment = Assessment(
+        quality=quality,
+        summary=summary,
+        gaps=gaps,
+        questions=[
+            Question(
+                id=q["id"],
+                text=q["text"],
+                context=q["context"],
+                options=q.get("options", []),
+                required=q.get("required", False),
+            )
+            for q in questions
+        ],
+    )
+    mock_agent_instance = MagicMock()
+    mock_agent_instance.refine_prd = AsyncMock(
+        return_value=(updated_prd, new_assessment)
+    )
+    return mock_agent_instance
+
+
+# ---------------------------------------------------------------------------
+# QA exchange recording tests: TS-07-1 through TS-07-5
+# ---------------------------------------------------------------------------
+
+
+class TestQAExchangeRecording:
+    """Tests for QA exchange recording during refine — TS-07-1 through TS-07-5."""
+
+    @pytest.mark.asyncio
+    async def test_ts07_1_refine_appends_qa_exchange(self, tmp_path: Path) -> None:
+        """TS-07-1: Refine appends QA exchange entry.
+
+        Requirement: 07-REQ-1.1
+        Verifies that a successful refine() call appends one entry to
+        qa_exchanges with the required keys.
+        """
+        session = _create_qa_exchange_session(tmp_path)
+        mock_agent = _mock_agent_for_refine()
+
+        with (
+            patch("speclib.session.SpecAgent", return_value=mock_agent),
+            patch("speclib.session.create_client", return_value=MagicMock()),
+        ):
+            await session.refine({"q1": "answer1", "q2": "answer2"})
+
+        assert len(session._qa_exchanges) == 1
+        entry = session._qa_exchanges[0]
+        assert "assessment_index" in entry
+        assert "answers" in entry
+        assert "timestamp" in entry
+
+    @pytest.mark.asyncio
+    async def test_ts07_2_qa_exchange_persisted_to_disk(self, tmp_path: Path) -> None:
+        """TS-07-2: QA exchange persisted to _session.json.
+
+        Requirement: 07-REQ-1.2
+        Verifies that the QA exchange entry appears in the persisted
+        _session.json file.
+        """
+        session = _create_qa_exchange_session(tmp_path)
+        mock_agent = _mock_agent_for_refine()
+
+        with (
+            patch("speclib.session.SpecAgent", return_value=mock_agent),
+            patch("speclib.session.create_client", return_value=MagicMock()),
+        ):
+            await session.refine({"q1": "a1"})
+
+        data = json.loads((session.spec_dir / "_session.json").read_text())
+        assert len(data["qa_exchanges"]) == 1
+
+    @pytest.mark.asyncio
+    async def test_ts07_3_assessment_index_correct(self, tmp_path: Path) -> None:
+        """TS-07-3: Assessment index is correct.
+
+        Requirement: 07-REQ-1.3
+        Verifies that assessment_index equals the index of the assessment
+        whose questions were answered. After two refine rounds, the second
+        QA exchange entry has assessment_index == 1.
+        """
+        # Start with 1 assessment (from assess). After first refine,
+        # assessment_history will have 2 entries.
+        session = _create_qa_exchange_session(tmp_path)
+
+        # First refine: answers assessment 0's questions
+        mock_agent_1 = _mock_agent_for_refine(
+            quality="needs_refinement",
+            summary="Still needs work",
+            questions=[
+                {
+                    "id": "q2",
+                    "text": "Next?",
+                    "context": "C",
+                    "options": [],
+                    "required": False,
+                }
+            ],
+        )
+        with (
+            patch("speclib.session.SpecAgent", return_value=mock_agent_1),
+            patch("speclib.session.create_client", return_value=MagicMock()),
+        ):
+            await session.refine({"q1": "answer1"})
+
+        assert session._qa_exchanges[0]["assessment_index"] == 0
+
+        # Second refine: answers assessment 1's questions
+        mock_agent_2 = _mock_agent_for_refine(
+            quality="ready",
+            summary="Ready now",
+            gaps=[],
+            questions=[],
+        )
+        with (
+            patch("speclib.session.SpecAgent", return_value=mock_agent_2),
+            patch("speclib.session.create_client", return_value=MagicMock()),
+        ):
+            await session.refine({"q2": "answer2"})
+
+        assert len(session._qa_exchanges) == 2
+        assert session._qa_exchanges[1]["assessment_index"] == 1
+
+    @pytest.mark.asyncio
+    async def test_ts07_4_qa_exchange_schema(self, tmp_path: Path) -> None:
+        """TS-07-4: QA exchange entry has correct schema.
+
+        Requirement: 07-REQ-2.1
+        Verifies the QA exchange entry contains exactly the three required
+        keys with correct types.
+        """
+        session = _create_qa_exchange_session(tmp_path)
+        mock_agent = _mock_agent_for_refine()
+
+        with (
+            patch("speclib.session.SpecAgent", return_value=mock_agent),
+            patch("speclib.session.create_client", return_value=MagicMock()),
+        ):
+            await session.refine({"q1": "a1"})
+
+        entry = session._qa_exchanges[0]
+        assert set(entry.keys()) == {"assessment_index", "answers", "timestamp"}
+        assert isinstance(entry["assessment_index"], int)
+        assert isinstance(entry["answers"], dict)
+        assert isinstance(entry["timestamp"], str)
+        assert len(entry["timestamp"]) > 0
+
+    @pytest.mark.asyncio
+    async def test_ts07_5_timestamp_patchable(self, tmp_path: Path) -> None:
+        """TS-07-5: Timestamp is patchable.
+
+        Requirement: 07-REQ-2.2
+        Verifies that the timestamp comes from the patchable _utcnow()
+        function.
+        """
+        session = _create_qa_exchange_session(tmp_path)
+        mock_agent = _mock_agent_for_refine()
+
+        with (
+            patch("speclib.session.SpecAgent", return_value=mock_agent),
+            patch("speclib.session.create_client", return_value=MagicMock()),
+            patch(
+                "speclib.session._utcnow",
+                return_value="2026-01-01T00:00:00+00:00",
+            ),
+        ):
+            await session.refine({"q1": "a1"})
+
+        assert session._qa_exchanges[0]["timestamp"] == "2026-01-01T00:00:00+00:00"
+
+
+# ---------------------------------------------------------------------------
+# No-side-effect tests: TS-07-6, TS-07-7
+# ---------------------------------------------------------------------------
+
+
+class TestQAExchangeNoSideEffects:
+    """Tests verifying existing interfaces are unaffected — TS-07-6, TS-07-7."""
+
+    def test_ts07_6_question_export_unchanged(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """TS-07-6: Question export unchanged.
+
+        Requirement: 07-REQ-3.1
+        Verifies that refine without --answers still outputs only
+        questions and answer template, with no qa_exchanges data.
+        """
+        from click.testing import CliRunner
+
+        from speclib.cli import main
+
+        # Set up campaign with a spec that has qa_exchanges populated
+        camp_dir = tmp_path / "camp_export"
+        Campaign.create(camp_dir, "Test", "Desc")
+        spec_dir = camp_dir / "01_test_spec"
+        spec_dir.mkdir()
+        (spec_dir / "prd.md").write_text("# PRD\nContent.")
+        (spec_dir / "_session.json").write_text(json.dumps({
+            "state": "assessing",
+            "prd_path": "prd.md",
+            "assessment_history": [
+                {
+                    "quality": "needs_refinement",
+                    "summary": "Needs work",
+                    "gaps": [],
+                    "questions": [
+                        {
+                            "id": "q1",
+                            "text": "What?",
+                            "context": "C",
+                            "options": [],
+                            "required": True,
+                        }
+                    ],
+                }
+            ],
+            "qa_exchanges": [
+                {
+                    "assessment_index": 0,
+                    "answers": {"q0": "prev answer"},
+                    "timestamp": "2026-01-01T00:00:00+00:00",
+                }
+            ],
+            "generated_artifacts": [],
+            "mode": "interactive",
+        }))
+
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            ["--campaign-dir", str(camp_dir), "refine", "01"],
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert set(data.keys()) == {"questions", "answers"}
+
+    def test_ts07_7_pending_questions_unaffected(self, tmp_path: Path) -> None:
+        """TS-07-7: pending_questions unaffected.
+
+        Requirement: 07-REQ-3.2
+        Verifies pending_questions() returns the same result regardless
+        of qa_exchanges content.
+        """
+        questions = [
+            {
+                "id": "q1",
+                "text": "What?",
+                "context": "C",
+                "options": ["A"],
+                "required": True,
+            }
+        ]
+        assessment = _sample_assessment_dict(questions=questions)
+
+        # Session with empty qa_exchanges
+        session_empty = _create_qa_exchange_session(
+            tmp_path,
+            assessment_history=[assessment],
+            qa_exchanges=[],
+        )
+        result_empty = session_empty.pending_questions()
+
+        # Session with populated qa_exchanges
+        session_populated = _create_qa_exchange_session(
+            tmp_path,
+            assessment_history=[assessment],
+            qa_exchanges=[
+                {
+                    "assessment_index": 0,
+                    "answers": {"q0": "ans"},
+                    "timestamp": "2026-01-01T00:00:00+00:00",
+                }
+            ],
+        )
+        result_populated = session_populated.pending_questions()
+
+        # Same questions returned regardless of qa_exchanges
+        assert result_empty == result_populated
+        assert len(result_empty) == 1
+        assert result_empty[0]["id"] == "q1"
+
+
+# ---------------------------------------------------------------------------
+# Edge case tests: TS-07-E1, TS-07-E2
+# ---------------------------------------------------------------------------
+
+
+class TestQAExchangeEdgeCases:
+    """Edge case tests for QA exchange recording — TS-07-E1, TS-07-E2."""
+
+    @pytest.mark.asyncio
+    async def test_ts07_e1_failed_refine_no_exchange(self, tmp_path: Path) -> None:
+        """TS-07-E1: Failed refine does not record exchange.
+
+        Requirement: 07-REQ-1.E1
+        Verifies qa_exchanges is unchanged when refine fails due to
+        an agent error.
+        """
+        session = _create_qa_exchange_session(tmp_path)
+
+        mock_agent_instance = MagicMock()
+        mock_agent_instance.refine_prd = AsyncMock(
+            side_effect=AgentError("API failed")
+        )
+
+        with (
+            patch("speclib.session.SpecAgent", return_value=mock_agent_instance),
+            patch("speclib.session.create_client", return_value=MagicMock()),
+        ):
+            with pytest.raises(AgentError):
+                await session.refine({"q1": "a1"})
+
+        assert len(session._qa_exchanges) == 0
+
+    def test_ts07_e2_existing_empty_qa_exchanges_loads(self, tmp_path: Path) -> None:
+        """TS-07-E2: Existing empty qa_exchanges loads fine.
+
+        Requirement: 07-REQ-1.E2
+        Verifies sessions with empty qa_exchanges load normally.
+        """
+        session = _create_qa_exchange_session(
+            tmp_path,
+            qa_exchanges=[],
+        )
+        assert session._qa_exchanges == []
+
+
+# ---------------------------------------------------------------------------
+# Property tests: TS-07-P1 through TS-07-P4
+# ---------------------------------------------------------------------------
+
+
+class TestQAExchangeProperties:
+    """Property tests for QA exchange recording — TS-07-P1 through TS-07-P4."""
+
+    @given(n=st.integers(min_value=1, max_value=5))
+    @settings(
+        max_examples=5,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
+    def test_ts07_p1_exchange_count_matches_refine_count(
+        self, n: int, tmp_path: Path
+    ) -> None:
+        """TS-07-P1: Exchange count matches refine count.
+
+        Property 1 from design.md.
+        Validates: 07-REQ-1.1, 07-REQ-1.E1
+        After N successful refine calls, qa_exchanges has N entries.
+        """
+        session = _create_qa_exchange_session(tmp_path)
+
+        for i in range(n):
+            mock_agent = _mock_agent_for_refine(
+                quality="needs_refinement",
+                summary=f"Round {i}",
+                questions=[
+                    {
+                        "id": f"q{i + 1}",
+                        "text": f"Question {i + 1}?",
+                        "context": "C",
+                        "options": [],
+                        "required": False,
+                    }
+                ],
+            )
+            with (
+                patch("speclib.session.SpecAgent", return_value=mock_agent),
+                patch("speclib.session.create_client", return_value=MagicMock()),
+            ):
+                asyncio.get_event_loop().run_until_complete(
+                    session.refine({f"q{i}": f"answer{i}"})
+                )
+
+        assert len(session._qa_exchanges) == n
+
+    @given(n=st.integers(min_value=1, max_value=5))
+    @settings(
+        max_examples=5,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
+    def test_ts07_p2_assessment_index_sequential(
+        self, n: int, tmp_path: Path
+    ) -> None:
+        """TS-07-P2: Assessment index consistency.
+
+        Property 2 from design.md.
+        Validates: 07-REQ-1.3
+        Each QA exchange's assessment_index is valid and sequential.
+        """
+        session = _create_qa_exchange_session(tmp_path)
+
+        for i in range(n):
+            mock_agent = _mock_agent_for_refine(
+                quality="needs_refinement",
+                summary=f"Round {i}",
+                questions=[
+                    {
+                        "id": f"q{i + 1}",
+                        "text": f"Q{i + 1}?",
+                        "context": "C",
+                        "options": [],
+                        "required": False,
+                    }
+                ],
+            )
+            with (
+                patch("speclib.session.SpecAgent", return_value=mock_agent),
+                patch("speclib.session.create_client", return_value=MagicMock()),
+            ):
+                asyncio.get_event_loop().run_until_complete(
+                    session.refine({f"q{i}": f"a{i}"})
+                )
+
+        for i in range(n):
+            assert session._qa_exchanges[i]["assessment_index"] == i
+
+    @given(n=st.integers(min_value=1, max_value=5))
+    @settings(
+        max_examples=5,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
+    def test_ts07_p3_exchange_schema_consistency(
+        self, n: int, tmp_path: Path
+    ) -> None:
+        """TS-07-P3: Exchange schema consistency.
+
+        Property 3 from design.md.
+        Validates: 07-REQ-2.1
+        Every QA exchange entry has exactly the required keys with
+        correct types.
+        """
+        session = _create_qa_exchange_session(tmp_path)
+
+        for i in range(n):
+            mock_agent = _mock_agent_for_refine(
+                quality="needs_refinement",
+                summary=f"Round {i}",
+                questions=[
+                    {
+                        "id": f"q{i + 1}",
+                        "text": f"Q{i + 1}?",
+                        "context": "C",
+                        "options": [],
+                        "required": False,
+                    }
+                ],
+            )
+            with (
+                patch("speclib.session.SpecAgent", return_value=mock_agent),
+                patch("speclib.session.create_client", return_value=MagicMock()),
+            ):
+                asyncio.get_event_loop().run_until_complete(
+                    session.refine({f"q{i}": f"a{i}"})
+                )
+
+        for entry in session._qa_exchanges:
+            assert set(entry.keys()) == {"assessment_index", "answers", "timestamp"}
+            assert isinstance(entry["assessment_index"], int)
+            assert isinstance(entry["answers"], dict)
+            assert isinstance(entry["timestamp"], str)
+
+    @given(n=st.integers(min_value=0, max_value=3))
+    @settings(
+        max_examples=4,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
+    def test_ts07_p4_failed_refine_no_append(
+        self, n: int, tmp_path: Path
+    ) -> None:
+        """TS-07-P4: Failed refine no-append.
+
+        Property 4 from design.md.
+        Validates: 07-REQ-1.E1
+        Agent errors never increase qa_exchanges length.
+        """
+        session = _create_qa_exchange_session(tmp_path)
+
+        # Do n successful refines first
+        for i in range(n):
+            mock_agent = _mock_agent_for_refine(
+                quality="needs_refinement",
+                summary=f"Round {i}",
+                questions=[
+                    {
+                        "id": f"q{i + 1}",
+                        "text": f"Q{i + 1}?",
+                        "context": "C",
+                        "options": [],
+                        "required": False,
+                    }
+                ],
+            )
+            with (
+                patch("speclib.session.SpecAgent", return_value=mock_agent),
+                patch("speclib.session.create_client", return_value=MagicMock()),
+            ):
+                asyncio.get_event_loop().run_until_complete(
+                    session.refine({f"q{i}": f"a{i}"})
+                )
+
+        len_before = len(session._qa_exchanges)
+
+        # Now do a failing refine
+        mock_agent_fail = MagicMock()
+        mock_agent_fail.refine_prd = AsyncMock(
+            side_effect=AgentError("API failed")
+        )
+        with (
+            patch("speclib.session.SpecAgent", return_value=mock_agent_fail),
+            patch("speclib.session.create_client", return_value=MagicMock()),
+        ):
+            with pytest.raises(AgentError):
+                asyncio.get_event_loop().run_until_complete(
+                    session.refine({f"q{n}": "a"})
+                )
+
+        assert len(session._qa_exchanges) == len_before
+
+
+# ---------------------------------------------------------------------------
+# Integration smoke test: TS-07-SMOKE-1
+# ---------------------------------------------------------------------------
+
+
+class TestQAExchangeSmoke:
+    """Integration smoke test for QA exchange recording — TS-07-SMOKE-1."""
+
+    @pytest.mark.asyncio
+    async def test_ts07_smoke_1_full_refine_records_qa_exchange(
+        self, tmp_path: Path
+    ) -> None:
+        """TS-07-SMOKE-1: Full refine records exchange in persisted session.
+
+        Execution Path: Path 1 from design.md.
+        Verifies the full path from refine() through agent call to persisted
+        QA exchange in _session.json.
+
+        Must NOT satisfy with: Mocking SpecSession, _persist(), or
+        _qa_exchanges.
+        """
+        # Create a real campaign and spec directory
+        camp = Campaign.create(tmp_path / "smoke_qa", "Test", "Desc")
+        session = camp.new_spec(
+            "qa_smoke_test",
+            "# My PRD\n\n## Intent\nBuild something.",
+        )
+
+        # Set state to assessing with one assessment containing questions
+        session_file = session.spec_dir / "_session.json"
+        data = json.loads(session_file.read_text())
+        data["state"] = "assessing"
+        data["assessment_history"] = [
+            {
+                "quality": "needs_refinement",
+                "summary": "Needs work",
+                "gaps": ["No goals"],
+                "questions": [
+                    {
+                        "id": "q1",
+                        "text": "What are the goals?",
+                        "context": "Goals section is missing",
+                        "options": [],
+                        "required": True,
+                    }
+                ],
+            }
+        ]
+        session_file.write_text(json.dumps(data, indent=2))
+
+        # Resume the real session
+        session = SpecSession.resume(session.spec_dir)
+
+        # Mock only the agent API call
+        new_assessment = Assessment(
+            quality="ready",
+            summary="PRD is ready",
+            gaps=[],
+            questions=[],
+        )
+        mock_agent_instance = MagicMock()
+        mock_agent_instance.refine_prd = AsyncMock(
+            return_value=(
+                "# Updated PRD\n## Goals\n1. Build REST API",
+                new_assessment,
+            )
+        )
+
+        with (
+            patch("speclib.session.SpecAgent", return_value=mock_agent_instance),
+            patch("speclib.session.create_client", return_value=MagicMock()),
+            patch(
+                "speclib.session._utcnow",
+                return_value="2026-06-10T12:00:00+00:00",
+            ),
+        ):
+            await session.refine({"q1": "answer1"})
+
+        # Read persisted data from disk — no mocking of _persist or _qa_exchanges
+        data = json.loads((session.spec_dir / "_session.json").read_text())
+        assert len(data["qa_exchanges"]) == 1
+        assert data["qa_exchanges"][0]["assessment_index"] == 0
+        assert data["qa_exchanges"][0]["answers"] == {"q1": "answer1"}
+        assert data["qa_exchanges"][0]["timestamp"] == "2026-06-10T12:00:00+00:00"
+        assert len(data["assessment_history"]) == 2
+>>>>>>> feature/07_refine_answer_recording/1
