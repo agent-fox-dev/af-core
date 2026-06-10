@@ -96,33 +96,33 @@ using the `jsonschema` library. Then removes the graceful skip in
     - [x] No linter warnings: `uv run ruff check speclib/ tests/ packages/`
     - [x] Requirements 08-REQ-1.*, 08-REQ-2.*, 08-REQ-3.*, 08-REQ-4.* met
 
-- [ ] 4. Wiring verification
-  - [ ] 4.1 Trace every execution path from design.md end-to-end
+- [x] 4. Wiring verification
+  - [x] 4.1 Trace every execution path from design.md end-to-end
     - Path 1 (valid artifact): verify `agent.validate_artifact` →
       `afspec.validate_artifact` → schema load → jsonschema → return None
     - Path 2 (invalid artifact): verify raises chain through to AgentError
     - Path 3 (unknown name): verify ValueError raised
     - _Requirements: all_
 
-  - [ ] 4.2 Verify return values propagate correctly
+  - [x] 4.2 Verify return values propagate correctly
     - `validate_artifact` returns None on success
     - `ValidationError` propagates to `AgentError` in agent.py
     - _Requirements: all_
 
-  - [ ] 4.3 Run the integration smoke tests
+  - [x] 4.3 Run the integration smoke tests
     - TS-08-SMOKE-1 passes with real schemas
     - _Test Spec: TS-08-SMOKE-1_
 
-  - [ ] 4.4 Stub / dead-code audit
+  - [x] 4.4 Stub / dead-code audit
     - Verify no `getattr` fallback remains in `speclib/agent.py`
     - Verify stub `__init__.py` has no dead exports
     - _Requirements: all_
 
-  - [ ] 4.V Verify wiring group
-    - [ ] All smoke tests pass
-    - [ ] No unjustified stubs remain in touched files
-    - [ ] All execution paths from design.md are live
-    - [ ] All existing tests still pass: `uv run pytest -q`
+  - [x] 4.V Verify wiring group
+    - [x] All smoke tests pass
+    - [x] No unjustified stubs remain in touched files
+    - [x] All execution paths from design.md are live
+    - [x] All existing tests still pass: `uv run pytest -q`
 
 ## Traceability
 
