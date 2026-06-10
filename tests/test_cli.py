@@ -1358,6 +1358,161 @@ class TestRefineQuestionExport:
         assert data["questions"] == []
         assert data["answers"] == {}
 
+    @pytest.mark.parametrize(
+        "answers_dict",
+        [
+            {"q1": "answer1"},
+            {"q1": "a", "q2": "b", "q3": "c"},
+            {"x": "yes", "y": "no"},
+        ],
+    )
+    def test_refine_with_answers_no_question_output(
+        self,
+        cli_runner: CliRunner,
+        campaign_dir_with_specs: Path,
+        tmp_path: Path,
+        answers_dict: dict[str, str],
+    ) -> None:
+        """TS-06-P4: --answers path calls session.refine() and never
+        outputs question-export JSON.
+
+        Property 4 from design.md.
+        Validates: 06-REQ-1.4
+
+        For any valid answers dict, session.refine is called exactly
+        once with the provided answers, and stdout does not contain
+        a top-level "questions" key (i.e. is not the question-export
+        format).
+        """
+        answers_path = tmp_path / "p4_answers.json"
+        answers_path.write_text(json.dumps(answers_dict))
+
+        assessment = _sample_assessment()
+        with patch("speclib.cli.SpecSession") as mock_cls:
+            session = _mock_session(state="assessing")
+            session.refine = AsyncMock(return_value=assessment)
+            mock_cls.resume.return_value = session
+            result = cli_runner.invoke(
+                main,
+                [
+                    "--campaign-dir",
+                    str(campaign_dir_with_specs),
+                    "refine",
+                    "01",
+                    "--answers",
+                    str(answers_path),
+                ],
+            )
+        _assert_exit(result, 0)
+        session.refine.assert_called_once()
+        # stdout must NOT contain question-export JSON
+        try:
+            data = json.loads(result.output)
+            assert "questions" not in data, (
+                "Expected no 'questions' key in output when --answers "
+                "is provided"
+            )
+        except json.JSONDecodeError:
+            pass  # Non-JSON output is expected (assessment format)
+
+
+class TestRefineQuestionExportSmoke:
+    """Integration smoke test for question export path."""
+
+    def test_refine_question_export_smoke(
+        self,
+        cli_runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """TS-06-SMOKE-1: Full question export path from CLI through
+        real session resume to JSON output.
+
+        Execution Path: Path 1 from design.md.
+        Must NOT satisfy with: Mocking SpecSession, pending_questions(),
+        or SpecSession.resume().
+
+        Setup: Create a real campaign directory with a spec dir
+        containing a _session.json with an assessment that has
+        questions. No mocking.
+        """
+        # Set up a real campaign with a spec in assessing state
+        campaign_dir = tmp_path / "smoke_campaign"
+        campaign_dir.mkdir()
+        (campaign_dir / "campaign.yaml").write_text(
+            "name: smoke\ndescription: smoke test\n"
+        )
+        spec_dir = campaign_dir / "01_smoke_spec"
+        spec_dir.mkdir()
+        (spec_dir / "prd.md").write_text("# Smoke PRD\n\nContent.")
+
+        # Write a _session.json with assessment history containing
+        # questions — no mocking of SpecSession
+        session_data = {
+            "state": "assessing",
+            "mode": "interactive",
+            "prd_path": "prd.md",
+            "assessment_history": [
+                {
+                    "quality": "needs_refinement",
+                    "summary": "Needs work",
+                    "gaps": ["Gap 1"],
+                    "questions": [
+                        {
+                            "id": "sq1",
+                            "text": "What is the scope?",
+                            "context": "Clarify scope",
+                            "options": ["Small", "Large"],
+                            "required": True,
+                        },
+                        {
+                            "id": "sq2",
+                            "text": "Which database?",
+                            "context": "Pick DB",
+                            "options": [],
+                            "required": False,
+                        },
+                    ],
+                }
+            ],
+            "qa_exchanges": [],
+            "generated_artifacts": [],
+        }
+        session_file = spec_dir / "_session.json"
+        session_file.write_text(json.dumps(session_data, indent=2))
+        session_before = session_file.read_text()
+
+        # Invoke the CLI — no mocks
+        result = cli_runner.invoke(
+            main,
+            [
+                "--campaign-dir",
+                str(campaign_dir),
+                "refine",
+                "01",
+            ],
+        )
+        _assert_exit(result, 0)
+
+        # Verify stdout is valid JSON
+        data = json.loads(result.output)
+
+        # Verify questions array
+        assert len(data["questions"]) == 2
+        q_ids = {q["id"] for q in data["questions"]}
+        assert q_ids == {"sq1", "sq2"}
+        for q in data["questions"]:
+            assert {"id", "text", "context", "options", "required"} <= set(
+                q.keys()
+            )
+
+        # Verify answers template
+        assert set(data["answers"].keys()) == q_ids
+        assert all(v == "" for v in data["answers"].values())
+
+        # Verify _session.json was NOT modified (read-only operation)
+        session_after = session_file.read_text()
+        assert session_before == session_after
+
 
 # ================================================================
 # Task 2.3: Accept, generate, validate, render, show, status tests

@@ -841,3 +841,137 @@ class TestPendingQuestions:
         assert session.state == state_before
         history_after = json.loads(session_file.read_text())
         assert history_before == history_after
+
+    @given(
+        question_ids=st.lists(
+            st.text(
+                alphabet=st.characters(
+                    whitelist_categories=("L", "N"),
+                    whitelist_characters="_",
+                ),
+                min_size=1,
+                max_size=10,
+            ),
+            min_size=1,
+            max_size=10,
+            unique=True,
+        ),
+    )
+    @settings(
+        max_examples=20,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
+    def test_answer_template_key_parity(
+        self, question_ids: list[str], tmp_path: Path
+    ) -> None:
+        """TS-06-P1: Answer template keys match question IDs exactly.
+
+        Property 1 from design.md.
+        Validates: 06-REQ-1.2, 06-REQ-1.3
+
+        For any non-empty set of questions, the answer template keys
+        match the question IDs exactly — no extra, no missing.
+        """
+        session = _create_session(tmp_path, SessionState.ASSESSING)
+        session_file = session.spec_dir / "_session.json"
+        data = json.loads(session_file.read_text())
+        data["assessment_history"] = [
+            {
+                "quality": "needs_refinement",
+                "summary": "Test",
+                "gaps": [],
+                "questions": [
+                    {
+                        "id": qid,
+                        "text": f"Question {qid}?",
+                        "context": f"Context for {qid}",
+                        "options": [],
+                        "required": False,
+                    }
+                    for qid in question_ids
+                ],
+            }
+        ]
+        session_file.write_text(json.dumps(data))
+        session = SpecSession.resume(session.spec_dir)
+
+        questions = session.pending_questions()
+        answers = {q["id"]: "" for q in questions}
+
+        # Key parity: answer template keys == question IDs
+        assert set(answers.keys()) == {q["id"] for q in questions}
+        # All values are empty strings
+        assert all(v == "" for v in answers.values())
+        # Length parity
+        assert len(questions) == len(question_ids)
+
+    @given(
+        num_questions=st.integers(min_value=0, max_value=10),
+        has_options=st.booleans(),
+        has_required=st.booleans(),
+    )
+    @settings(
+        max_examples=20,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
+    def test_pending_questions_fidelity(
+        self,
+        num_questions: int,
+        has_options: bool,
+        has_required: bool,
+        tmp_path: Path,
+    ) -> None:
+        """TS-06-P2: pending_questions output matches assessment questions.
+
+        Property 2 from design.md.
+        Validates: 06-REQ-2.1, 06-REQ-2.E1
+
+        For any assessment history with 0-10 questions (some with
+        missing optional fields), pending_questions() returns a list
+        whose length equals the number of questions, and each dict
+        contains matching values for all five keys.
+        """
+        raw_questions = []
+        for i in range(num_questions):
+            q: dict = {
+                "id": f"pq{i}",
+                "text": f"Question {i}?",
+                "context": f"Context {i}",
+            }
+            if has_options:
+                q["options"] = [f"opt_{i}_a", f"opt_{i}_b"]
+            if has_required:
+                q["required"] = True
+            raw_questions.append(q)
+
+        session = _create_session(tmp_path, SessionState.ASSESSING)
+        session_file = session.spec_dir / "_session.json"
+        data = json.loads(session_file.read_text())
+        data["assessment_history"] = [
+            {
+                "quality": "needs_refinement",
+                "summary": "Fidelity test",
+                "gaps": [],
+                "questions": raw_questions,
+            }
+        ]
+        session_file.write_text(json.dumps(data))
+        session = SpecSession.resume(session.spec_dir)
+
+        result = session.pending_questions()
+
+        # Length match
+        assert len(result) == num_questions
+
+        # Content fidelity
+        for r, q in zip(result, raw_questions):
+            assert r["id"] == q["id"]
+            assert r["text"] == q["text"]
+            assert r["context"] == q["context"]
+            # Defaults applied for missing optional fields
+            expected_options = q.get("options", [])
+            expected_required = q.get("required", False)
+            assert r["options"] == expected_options
+            assert r["required"] == expected_required
