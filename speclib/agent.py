@@ -48,13 +48,17 @@ def validate_artifact(artifact_name: str, content: dict[str, Any]) -> None:
 
     This is a module-level function so it can be patched in tests.
     Called by ``generate_artifacts`` after each artifact is produced.
+    Skips validation if the afspec package does not provide a
+    ``validate_artifact`` function (stub package).
 
     Raises:
         Exception: If the artifact fails schema validation.
     """
     import afspec  # type: ignore[import-untyped]
 
-    afspec.validate_artifact(artifact_name, content)
+    validator = getattr(afspec, "validate_artifact", None)
+    if validator is not None:
+        validator(artifact_name, content)
 
 
 class SpecAgent:
