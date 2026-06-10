@@ -1,5 +1,5 @@
 {
-  "state": "prd_accepted",
+  "state": "generating",
   "prd_path": "prd.md",
   "assessment_history": [
     {
@@ -326,5 +326,6 @@
   ],
   "qa_exchanges": [],
   "generated_artifacts": [],
-  "mode": "interactive"
+  "mode": "interactive",
+  "last_error": "Artifact 'requirements' failed schema validation: module 'afspec' has no attribute 'validate_artifact'"
 }
