@@ -9,13 +9,31 @@ resolution-markers = [
 [[package]]
 name = "afspec"
 version = "0.1.0"
-source = { editable = "packages/afspec" }
+source = { editable = "../speclib-python" }
 dependencies = [
     { name = "jsonschema" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "jsonschema", specifier = ">=4.0" }]
+requires-dist = [
+    { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.0" },
+    { name = "jsonschema", specifier = ">=4.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0" },
+    { name = "pydantic", specifier = ">=2.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
+]
+provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=2.1.0" },
+    { name = "types-jsonschema", specifier = ">=4.26.0.20260518" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.20260518" },
+]
 
 [[package]]
 name = "annotated-types"
@@ -951,7 +969,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "afspec", editable = "packages/afspec" },
+    { name = "afspec", editable = "../speclib-python" },
     { name = "anthropic", extras = ["vertex", "bedrock"], specifier = ">=0.40.0" },
     { name = "click", specifier = ">=8.1" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.100" },

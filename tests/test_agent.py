@@ -243,23 +243,24 @@ async def test_generate_three_artifacts_in_order(mock_client):
     )
     agent = SpecAgent(mock_client, "claude-sonnet-4-6")
 
-    with patch("speclib.agent.validate_artifact", return_value=None):
-        result = await agent.generate_artifacts(
-            "# Accepted PRD", "03", "agent_pipeline"
-        )
+    result = await agent.generate_artifacts(
+        "# Accepted PRD", "03", "agent_pipeline"
+    )
 
     assert set(result.keys()) == {"requirements", "test_spec", "tasks"}
     assert mock_client.messages.create.call_count == 3
 
 
 # ===================================================================
-# TS-03-10: generate_artifacts returns parsed JSON content
+# TS-03-10: generate_artifacts returns afspec model instances
 # ===================================================================
 
 
 @pytest.mark.asyncio
-async def test_generate_returns_parsed_json(mock_client):
-    """TS-03-10: Each artifact value is parsed JSON (dict), not a raw string."""
+async def test_generate_returns_model_instances(mock_client):
+    """TS-03-10: Each artifact value is an afspec Pydantic model."""
+    from afspec import Requirements, Tasks, TestSpec
+
     mock_client.messages.create = AsyncMock(
         side_effect=[
             make_artifact_response("requirements", SAMPLE_REQUIREMENTS_JSON),
@@ -269,11 +270,11 @@ async def test_generate_returns_parsed_json(mock_client):
     )
     agent = SpecAgent(mock_client, "claude-sonnet-4-6")
 
-    with patch("speclib.agent.validate_artifact", return_value=None):
-        result = await agent.generate_artifacts("# PRD", "03", "test")
+    result = await agent.generate_artifacts("# PRD", "03", "test")
 
-    for name, content in result.items():
-        assert isinstance(content, dict), f"{name} should be a dict"
+    assert isinstance(result["requirements"], Requirements)
+    assert isinstance(result["test_spec"], TestSpec)
+    assert isinstance(result["tasks"], Tasks)
 
 
 # ===================================================================
@@ -283,46 +284,37 @@ async def test_generate_returns_parsed_json(mock_client):
 
 @pytest.mark.asyncio
 async def test_validate_before_next_generation(mock_client):
-    """TS-03-11: Each artifact is validated against its schema before
-    the next artifact is generated."""
-    call_log: list[tuple[str, str]] = []
+    """TS-03-11: Each artifact is validated (via Pydantic construction)
+    before the next artifact is generated."""
+    call_log: list[str] = []
     artifact_order = ["requirements", "test_spec", "tasks"]
     generate_counter = 0
 
-    original_create = AsyncMock(
-        side_effect=[
-            make_artifact_response("requirements", SAMPLE_REQUIREMENTS_JSON),
-            make_artifact_response("test_spec", SAMPLE_TEST_SPEC_JSON),
-            make_artifact_response("tasks", SAMPLE_TASKS_JSON),
-        ]
-    )
+    samples = {
+        "requirements": SAMPLE_REQUIREMENTS_JSON,
+        "test_spec": SAMPLE_TEST_SPEC_JSON,
+        "tasks": SAMPLE_TASKS_JSON,
+    }
 
     async def tracking_create(**kwargs):
         nonlocal generate_counter
         name = artifact_order[generate_counter]
         generate_counter += 1
-        call_log.append(("generate", name))
-        return await original_create(**kwargs)
+        call_log.append(f"generate:{name}")
+        return make_artifact_response(name, samples[name])
 
     mock_client.messages.create = AsyncMock(side_effect=tracking_create)
-
-    def tracking_validate(name, content):
-        call_log.append(("validate", name))
-
     agent = SpecAgent(mock_client, "claude-sonnet-4-6")
 
-    with patch("speclib.agent.validate_artifact", side_effect=tracking_validate):
-        await agent.generate_artifacts("# PRD", "03", "test")
+    await agent.generate_artifacts("# PRD", "03", "test")
 
-    # Verify interleaved generate/validate pattern
+    # All three generated in order
     assert call_log == [
-        ("generate", "requirements"),
-        ("validate", "requirements"),
-        ("generate", "test_spec"),
-        ("validate", "test_spec"),
-        ("generate", "tasks"),
-        ("validate", "tasks"),
+        "generate:requirements",
+        "generate:test_spec",
+        "generate:tasks",
     ]
+    assert generate_counter == 3
 
 
 # ===================================================================
@@ -333,24 +325,19 @@ async def test_validate_before_next_generation(mock_client):
 @pytest.mark.asyncio
 async def test_validation_failure_aborts_generation(mock_client):
     """TS-03-12: Generation stops and raises AgentError if an artifact
-    fails validation."""
+    fails Pydantic validation."""
+    # Return content with a field of the wrong type
+    invalid_content = {"glossary": "not_a_dict"}
     mock_client.messages.create = AsyncMock(
         side_effect=[
-            make_artifact_response("requirements", SAMPLE_REQUIREMENTS_JSON),
-            make_artifact_response("test_spec", SAMPLE_TEST_SPEC_JSON),
-            make_artifact_response("tasks", SAMPLE_TASKS_JSON),
+            make_artifact_response("requirements", invalid_content),
         ]
     )
     agent = SpecAgent(mock_client, "claude-sonnet-4-6")
 
-    with patch(
-        "speclib.agent.validate_artifact",
-        side_effect=Exception("schema mismatch"),
-    ):
-        with pytest.raises(AgentError):
-            await agent.generate_artifacts("# PRD", "03", "test")
+    with pytest.raises(AgentError, match="requirements.*validation"):
+        await agent.generate_artifacts("# PRD", "03", "test")
 
-    # Only one API call made (requirements only, failed validation)
     assert mock_client.messages.create.call_count == 1
 
 
@@ -372,8 +359,7 @@ async def test_test_spec_includes_requirements_context(mock_client):
     )
     agent = SpecAgent(mock_client, "claude-sonnet-4-6")
 
-    with patch("speclib.agent.validate_artifact", return_value=None):
-        await agent.generate_artifacts("# PRD", "03", "test")
+    await agent.generate_artifacts("# PRD", "03", "test")
 
     # The second API call's user message should contain requirements content
     second_call = mock_client.messages.create.call_args_list[1]
@@ -399,8 +385,7 @@ async def test_tasks_includes_both_prior_artifacts(mock_client):
     )
     agent = SpecAgent(mock_client, "claude-sonnet-4-6")
 
-    with patch("speclib.agent.validate_artifact", return_value=None):
-        await agent.generate_artifacts("# PRD", "03", "test")
+    await agent.generate_artifacts("# PRD", "03", "test")
 
     # The third API call's user message should contain both prior artifacts
     third_call = mock_client.messages.create.call_args_list[2]
@@ -703,26 +688,24 @@ async def test_artifact_tool_not_invoked(mock_client):
 
 
 # ===================================================================
-# TS-03-E9: Schema validation failure with detailed error
+# TS-03-E9: Validation failure with detailed error
 # ===================================================================
 
 
 @pytest.mark.asyncio
 async def test_schema_validation_error_detail(mock_client):
     """TS-03-E9: AgentError includes artifact name and validation details."""
+    # Provide content that will fail Pydantic validation
+    invalid_content = {"introduction": 42}  # wrong type
     mock_client.messages.create = AsyncMock(
         side_effect=[
-            make_artifact_response("requirements", SAMPLE_REQUIREMENTS_JSON),
+            make_artifact_response("requirements", invalid_content),
         ]
     )
     agent = SpecAgent(mock_client, "claude-sonnet-4-6")
 
-    with patch(
-        "speclib.agent.validate_artifact",
-        side_effect=Exception("missing 'introduction'"),
-    ):
-        with pytest.raises(AgentError, match="requirements.*introduction"):
-            await agent.generate_artifacts("# PRD", "03", "test")
+    with pytest.raises(AgentError, match="requirements.*validation"):
+        await agent.generate_artifacts("# PRD", "03", "test")
 
 
 # ===================================================================
@@ -898,18 +881,14 @@ class TestPropertyGenerationOrder:
         self, mock_client
     ) -> None:
         """TS-03-P3: Artifacts are always generated in the order
-        requirements, test_spec, tasks.
-
-        Property 3 from design.md.
-        Validates: 03-REQ-3.1, 03-REQ-3.6, 03-REQ-3.7
-        """
+        requirements, test_spec, tasks."""
         call_order: list[str] = []
         artifact_order = ["requirements", "test_spec", "tasks"]
-        responses = [
-            make_artifact_response("requirements", SAMPLE_REQUIREMENTS_JSON),
-            make_artifact_response("test_spec", SAMPLE_TEST_SPEC_JSON),
-            make_artifact_response("tasks", SAMPLE_TASKS_JSON),
-        ]
+        samples = {
+            "requirements": SAMPLE_REQUIREMENTS_JSON,
+            "test_spec": SAMPLE_TEST_SPEC_JSON,
+            "tasks": SAMPLE_TASKS_JSON,
+        }
         generate_counter = 0
 
         async def tracking_create(**kwargs):
@@ -917,13 +896,12 @@ class TestPropertyGenerationOrder:
             name = artifact_order[generate_counter]
             generate_counter += 1
             call_order.append(name)
-            return responses[generate_counter - 1]
+            return make_artifact_response(name, samples[name])
 
         mock_client.messages.create = AsyncMock(side_effect=tracking_create)
         agent = SpecAgent(mock_client, "claude-sonnet-4-6")
 
-        with patch("speclib.agent.validate_artifact", return_value=None):
-            await agent.generate_artifacts("# PRD text", "03", "test")
+        await agent.generate_artifacts("# PRD text", "03", "test")
 
         assert call_order == ["requirements", "test_spec", "tasks"]
 
@@ -940,11 +918,7 @@ class TestPropertyRetryBound:
     @settings(max_examples=10)
     def test_property_retry_count_bounded(self, n_errors: int) -> None:
         """TS-03-P4: For any sequence of transient errors, the total
-        number of attempts never exceeds 4 (1 initial + 3 retries).
-
-        Property 4 from design.md.
-        Validates: 03-REQ-5.1, 03-REQ-5.E2
-        """
+        number of attempts never exceeds 4 (1 initial + 3 retries)."""
         import asyncio
 
         mock_client = type("MockClient", (), {})()

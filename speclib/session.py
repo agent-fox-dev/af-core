@@ -19,6 +19,12 @@ from pathlib import Path
 from typing import Any
 
 import afspec  # type: ignore[import-untyped]
+from afspec import (  # type: ignore[import-untyped]
+    Requirements,
+    Tasks,
+    TestSpec,
+    marshal_json,
+)
 
 from speclib.agent import SpecAgent
 from speclib.auth import create_client
@@ -349,17 +355,23 @@ class SpecSession:
         agent = _create_agent()
 
         # Detect existing artifacts for resume (03-REQ-6.E2)
+        artifact_models: dict[str, Any] = {
+            "requirements": Requirements,
+            "test_spec": TestSpec,
+            "tasks": Tasks,
+        }
         existing: dict[str, Any] = {}
-        artifact_names = ["requirements", "test_spec", "tasks"]
-        for name in artifact_names:
+        for name, model_cls in artifact_models.items():
             path = self._spec_dir / f"{name}.json"
             if path.exists():
-                existing[name] = json.loads(path.read_text())
+                existing[name] = model_cls.model_validate_json(
+                    path.read_text()
+                )
 
-        def _write_artifact(name: str, content: dict[str, Any]) -> None:
+        def _write_artifact(name: str, model: Any) -> None:
             """Write a single artifact to disk incrementally."""
             path = self._spec_dir / f"{name}.json"
-            path.write_text(json.dumps(content, indent=2))
+            path.write_text(marshal_json(model))
 
         try:
             artifacts = await agent.generate_artifacts(
@@ -377,13 +389,13 @@ class SpecSession:
         # Write any artifacts not yet on disk (covers the case where
         # SpecAgent is mocked and the on_artifact callback was not
         # invoked)
-        for name, content in artifacts.items():
+        for name, model in artifacts.items():
             path = self._spec_dir / f"{name}.json"
             if not path.exists():
-                path.write_text(json.dumps(content, indent=2))
-
-        # Cross-file validation via afspec (03-REQ-6.3)
-        afspec.validate(self._spec_dir)
+                if hasattr(model, "model_dump"):
+                    path.write_text(marshal_json(model))
+                else:
+                    path.write_text(json.dumps(model, indent=2))
 
         self._generated_artifacts = list(artifacts.keys())
         self._state = SessionState.GENERATED

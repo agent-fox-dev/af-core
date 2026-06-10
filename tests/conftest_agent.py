@@ -125,15 +125,18 @@ def make_artifact_response(
     artifact_name: str,
     content: dict[str, Any] | None = None,
 ) -> FakeMessage:
-    """Build a fake API response containing a submit_artifact tool call."""
+    """Build a fake API response containing a per-artifact tool call.
+
+    The tool name is ``submit_{artifact_name}`` (e.g. ``submit_requirements``).
+    """
     if content is None:
         content = {"placeholder": True}
+    tool_name = f"submit_{artifact_name}"
     return FakeMessage(
         content=[
             FakeToolUseBlock(
-                name="submit_artifact",
+                name=tool_name,
                 input={
-                    "artifact_name": artifact_name,
                     "content": content,
                 },
             )
@@ -209,26 +212,49 @@ def sample_questions() -> list[Question]:
 
 
 # ---------------------------------------------------------------------------
-# Sample artifact JSON
+# Sample artifact JSON — valid for afspec Pydantic models
 # ---------------------------------------------------------------------------
 
 SAMPLE_REQUIREMENTS_JSON: dict[str, Any] = {
-    "spec_format_version": "1.2",
+    "spec_id": "test-03",
+    "spec_name": "agent_pipeline",
+    "schema_version": 1,
     "introduction": "Requirements for test spec.",
-    "glossary": [],
+    "glossary": {},
     "requirements": [],
+    "correctness_properties": [],
+    "execution_paths": [],
+    "error_handling": [],
 }
 
 SAMPLE_TEST_SPEC_JSON: dict[str, Any] = {
-    "spec_format_version": "1.2",
-    "overview": "Test specification for test spec.",
+    "spec_id": "test-03",
+    "spec_name": "agent_pipeline",
+    "schema_version": 1,
     "test_cases": [],
+    "property_tests": [],
+    "edge_case_tests": [],
+    "smoke_tests": [],
+    "coverage": {
+        "requirements_covered": [],
+        "properties_covered": [],
+        "paths_covered": [],
+        "gaps": [],
+    },
 }
 
 SAMPLE_TASKS_JSON: dict[str, Any] = {
-    "spec_format_version": "1.2",
-    "overview": "Implementation plan for test spec.",
-    "tasks": [],
+    "spec_id": "test-03",
+    "spec_name": "agent_pipeline",
+    "schema_version": 1,
+    "test_commands": {
+        "spec_tests": "pytest -q",
+        "all_tests": "pytest -q",
+        "linter": "ruff check",
+    },
+    "dependencies": [],
+    "task_groups": [],
+    "traceability": [],
 }
 
 

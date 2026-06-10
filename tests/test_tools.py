@@ -123,15 +123,18 @@ def test_artifact_tool_returns_single_tool():
 
 
 def test_artifact_tool_correct_name():
-    """TS-03-20: The tool has name='submit_artifact'."""
-    tools = artifact_tool("requirements")
-    tool = tools[0]
-    assert tool["name"] == "submit_artifact"
+    """TS-03-20: The tool has per-artifact name (submit_requirements, etc.)."""
+    for name in ["requirements", "test_spec", "tasks"]:
+        tools = artifact_tool(name)
+        tool = tools[0]
+        assert tool["name"] == f"submit_{name}"
 
 
 def test_artifact_tool_schema_fields():
-    """TS-03-20: input_schema has artifact_name and content fields."""
+    """TS-03-20: input_schema has content field with structured schema."""
     tools = artifact_tool("requirements")
     schema = tools[0]["input_schema"]
-    assert "artifact_name" in schema["properties"]
     assert "content" in schema["properties"]
+    content_schema = schema["properties"]["content"]
+    assert content_schema["type"] == "object"
+    assert "properties" in content_schema

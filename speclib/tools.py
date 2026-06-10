@@ -7,7 +7,10 @@ shape when using tool_use for structured output.
 
 from __future__ import annotations
 
+import copy
 from typing import Any
+
+from afspec import Requirements, Tasks, TestSpec  # type: ignore[import-untyped]
 
 # ---------------------------------------------------------------------------
 # Tool definition constants
@@ -98,28 +101,66 @@ SUBMIT_PRD_UPDATE_TOOL: dict[str, Any] = {
     },
 }
 
-SUBMIT_ARTIFACT_TOOL: dict[str, Any] = {
-    "name": "submit_artifact",
-    "description": "Submit the generated artifact content as JSON.",
-    "input_schema": {
-        "type": "object",
-        "required": ["artifact_name", "content"],
-        "properties": {
-            "artifact_name": {
-                "type": "string",
-                "enum": ["requirements", "test_spec", "tasks"],
-                "description": "The name of the artifact being submitted.",
-            },
-            "content": {
-                "type": "object",
-                "description": (
-                    "The artifact content conforming to the "
-                    "spec-format v1.2 JSON schema."
-                ),
-            },
-        },
-    },
+# ---------------------------------------------------------------------------
+# Artifact model mapping
+# ---------------------------------------------------------------------------
+
+_ARTIFACT_MODELS: dict[str, Any] = {
+    "requirements": Requirements,
+    "test_spec": TestSpec,
+    "tasks": Tasks,
 }
+
+
+# ---------------------------------------------------------------------------
+# JSON Schema inlining
+# ---------------------------------------------------------------------------
+
+
+def _inline_refs(schema: dict[str, Any]) -> dict[str, Any]:
+    """Resolve all ``$ref`` / ``$defs`` in a JSON Schema to produce a
+    self-contained schema suitable for the Anthropic tool-use API
+    (which does not support ``$ref``).
+    """
+    schema = copy.deepcopy(schema)
+    defs = schema.pop("$defs", {})
+
+    def _resolve(node: Any) -> Any:
+        if isinstance(node, dict):
+            if "$ref" in node:
+                ref_path = node["$ref"]  # e.g. "#/$defs/Criterion"
+                ref_name = ref_path.rsplit("/", 1)[-1]
+                resolved = copy.deepcopy(defs[ref_name])
+                return _resolve(resolved)
+            return {k: _resolve(v) for k, v in node.items()}
+        if isinstance(node, list):
+            return [_resolve(item) for item in node]
+        return node
+
+    result: dict[str, Any] = _resolve(schema)
+    return result
+
+
+def _clean_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Remove Pydantic metadata fields that add noise for the LLM."""
+    schema = _inline_refs(schema)
+
+    def _strip(node: Any) -> Any:
+        if isinstance(node, dict):
+            node.pop("title", None)
+            node.pop("description", None)
+            node.pop("default", None)
+            # Remove the $schema alias field — optional, not useful for generation
+            props = node.get("properties", {})
+            props.pop("$schema", None)
+            for v in node.values():
+                _strip(v)
+        elif isinstance(node, list):
+            for item in node:
+                _strip(item)
+
+    _strip(schema)
+    return schema
 
 
 # ---------------------------------------------------------------------------
@@ -146,10 +187,31 @@ def refinement_tools() -> list[dict[str, Any]]:
 def artifact_tool(artifact_name: str) -> list[dict[str, Any]]:
     """Return tool definition for generating one artifact.
 
-    Defines the submit_artifact tool with schema appropriate
-    for the given artifact_name.
+    Produces a per-artifact tool (``submit_requirements``,
+    ``submit_test_spec``, or ``submit_tasks``) whose ``content``
+    property embeds the Pydantic model's JSON schema so the LLM
+    is structurally constrained.
 
     Args:
-        artifact_name: One of "requirements", "test_spec", "tasks".
+        artifact_name: One of ``"requirements"``, ``"test_spec"``,
+            ``"tasks"``.
     """
-    return [SUBMIT_ARTIFACT_TOOL]
+    model_cls = _ARTIFACT_MODELS[artifact_name]
+    content_schema = _clean_schema(model_cls.model_json_schema())  # type: ignore[union-attr]
+
+    tool_name = f"submit_{artifact_name}"
+    return [
+        {
+            "name": tool_name,
+            "description": (
+                f"Submit the generated {artifact_name} artifact content."
+            ),
+            "input_schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                    "content": content_schema,
+                },
+            },
+        }
+    ]

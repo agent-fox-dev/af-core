@@ -1,26 +1,23 @@
-"""Tests for afspec.validate_artifact — spec artifact validation.
+"""Tests for afspec model construction and validation.
 
-Covers TS-08-1 through TS-08-7 (unit tests),
-TS-08-E1, TS-08-E2 (edge cases),
-TS-08-P1 through TS-08-P4 (property tests),
-TS-08-SMOKE-1 (integration smoke test).
-
-All tests are written against the test_spec.md contract.  They are expected
-to FAIL until the implementation in task groups 2-3 is complete.
+Covers artifact validation via Pydantic model construction, replacing
+the old stub-based validate_artifact tests. Artifacts are now validated
+by constructing afspec Pydantic models (Requirements, TestSpec, Tasks)
+rather than via JSON Schema post-hoc validation.
 """
 
 from __future__ import annotations
 
-import importlib
-import inspect
 import json
 
 import pytest
+from afspec import Requirements, Tasks, TestSpec
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from pydantic import ValidationError as PydanticValidationError
 
 # ---------------------------------------------------------------------------
-# Minimal valid artifact fixtures (derived from JSON schema required fields)
+# Minimal valid artifact fixtures
 # ---------------------------------------------------------------------------
 
 VALID_REQUIREMENTS: dict = {
@@ -28,160 +25,182 @@ VALID_REQUIREMENTS: dict = {
     "spec_name": "test_spec",
     "schema_version": 1,
     "introduction": "A test requirements artifact.",
+    "glossary": {},
+    "requirements": [],
+    "correctness_properties": [],
+    "execution_paths": [],
+    "error_handling": [],
 }
 
 VALID_TEST_SPEC: dict = {
     "spec_id": "test-01",
     "spec_name": "test_spec",
     "schema_version": 1,
+    "test_cases": [],
+    "property_tests": [],
+    "edge_case_tests": [],
+    "smoke_tests": [],
+    "coverage": {
+        "requirements_covered": [],
+        "properties_covered": [],
+        "paths_covered": [],
+        "gaps": [],
+    },
 }
 
 VALID_TASKS: dict = {
     "spec_id": "test-01",
     "spec_name": "test_spec",
     "schema_version": 1,
+    "test_commands": {
+        "spec_tests": "pytest -q",
+        "all_tests": "pytest -q",
+        "linter": "ruff check",
+    },
+    "dependencies": [],
+    "task_groups": [],
+    "traceability": [],
 }
 
-VALID_CONTENT_FOR: dict[str, dict] = {
-    "requirements": VALID_REQUIREMENTS,
-    "test_spec": VALID_TEST_SPEC,
-    "tasks": VALID_TASKS,
+ARTIFACT_MODELS = {
+    "requirements": (Requirements, VALID_REQUIREMENTS),
+    "test_spec": (TestSpec, VALID_TEST_SPEC),
+    "tasks": (Tasks, VALID_TASKS),
 }
 
 ARTIFACT_NAMES: list[str] = ["requirements", "test_spec", "tasks"]
 
-SCHEMA_FILENAMES: list[str] = [
-    "requirements.v1.json",
-    "test_spec.v1.json",
-    "tasks.v1.json",
-]
-
 
 # ===================================================================
-# TS-08-1: validate_artifact is exported
+# Model construction tests
 # ===================================================================
 
 
-def test_validate_artifact_importable():
-    """TS-08-1: validate_artifact is importable from afspec."""
-    from afspec import validate_artifact
-
-    assert callable(validate_artifact)
-
-
-# ===================================================================
-# TS-08-2: Valid artifact passes
-# ===================================================================
+def test_requirements_model_importable():
+    """afspec model classes are importable."""
+    assert Requirements is not None
+    assert TestSpec is not None
+    assert Tasks is not None
 
 
-def test_valid_artifact_passes():
-    """TS-08-2: Valid content returns None without error."""
-    from afspec import validate_artifact
-
-    result = validate_artifact("requirements", VALID_REQUIREMENTS)
-    assert result is None
-
-
-# ===================================================================
-# TS-08-3: Invalid artifact raises ValidationError
-# ===================================================================
+def test_valid_requirements_construct():
+    """Valid requirements dict constructs a Requirements model."""
+    model = Requirements(**VALID_REQUIREMENTS)
+    assert model.spec_id == "test-01"
+    assert model.schema_version == 1
 
 
-def test_invalid_artifact_raises():
-    """TS-08-3: Invalid content raises ValidationError with details."""
-    from afspec import ValidationError, validate_artifact
-
-    with pytest.raises(ValidationError) as exc_info:
-        validate_artifact("requirements", {"wrong_key": 42})
-    assert "requirements" in str(exc_info.value)
+def test_valid_test_spec_construct():
+    """Valid test_spec dict constructs a TestSpec model."""
+    model = TestSpec(**VALID_TEST_SPEC)
+    assert model.spec_id == "test-01"
 
 
-# ===================================================================
-# TS-08-4: All three artifact names accepted
-# ===================================================================
+def test_valid_tasks_construct():
+    """Valid tasks dict constructs a Tasks model."""
+    model = Tasks(**VALID_TASKS)
+    assert model.spec_id == "test-01"
 
 
 @pytest.mark.parametrize("name", ARTIFACT_NAMES)
-def test_all_artifact_names_accepted(name: str):
-    """TS-08-4: All three artifact names are recognized."""
-    from afspec import validate_artifact
-
-    validate_artifact(name, VALID_CONTENT_FOR[name])  # no exception
+def test_all_artifact_models_construct(name: str):
+    """All three artifact types can be constructed from valid dicts."""
+    model_cls, valid_data = ARTIFACT_MODELS[name]
+    model = model_cls(**valid_data)
+    assert model.spec_id == "test-01"
 
 
 # ===================================================================
-# TS-08-5: Schemas are loadable
+# Schema validation tests
 # ===================================================================
 
 
-@pytest.mark.parametrize("filename", SCHEMA_FILENAMES)
-def test_schemas_loadable(filename: str):
-    """TS-08-5: Bundled schema files exist and parse as valid JSON."""
+def test_schemas_loadable():
+    """Bundled JSON schema files exist and are parseable."""
+    import importlib.resources
+
     schema_files = importlib.resources.files("afspec.schemas")
-    data = schema_files.joinpath(filename).read_text(encoding="utf-8")
-    schema = json.loads(data)
-    assert isinstance(schema, dict)
+    for filename in ["requirements.v1.json", "test_spec.v1.json", "tasks.v1.json"]:
+        data = schema_files.joinpath(filename).read_text(encoding="utf-8")
+        schema = json.loads(data)
+        assert isinstance(schema, dict)
 
 
 # ===================================================================
-# TS-08-7: ValidationError has correct attributes
+# Glossary format tests
 # ===================================================================
 
 
-def test_validation_error_attributes():
-    """TS-08-7: ValidationError has artifact_name and errors attrs."""
-    from afspec import ValidationError, validate_artifact
-
-    with pytest.raises(ValidationError) as exc_info:
-        validate_artifact("requirements", {})
-    exc = exc_info.value
-    assert exc.artifact_name == "requirements"
-    assert isinstance(exc.errors, list)
-    assert len(exc.errors) > 0
-    assert all(isinstance(e, str) for e in exc.errors)
+def test_glossary_must_be_dict():
+    """Glossary field must be a dict (not an array)."""
+    data = dict(VALID_REQUIREMENTS)
+    data["glossary"] = {"token": "A credential"}
+    model = Requirements(**data)
+    assert model.glossary == {"token": "A credential"}
 
 
-# ===================================================================
-# Edge Case Tests
-# ===================================================================
-
-# -------------------------------------------------------------------
-# TS-08-E1: Unknown artifact name
-# -------------------------------------------------------------------
-
-
-def test_unknown_artifact_name():
-    """TS-08-E1: Unrecognized artifact name raises ValueError."""
-    from afspec import validate_artifact
-
-    with pytest.raises(ValueError) as exc_info:
-        validate_artifact("unknown", {})
-    msg = str(exc_info.value)
-    assert "requirements" in msg
-    assert "test_spec" in msg
-    assert "tasks" in msg
-
-
-# -------------------------------------------------------------------
-# TS-08-E2: Empty dict fails required fields
-# -------------------------------------------------------------------
-
-
-def test_empty_dict_fails():
-    """TS-08-E2: Empty dict fails schema validation."""
-    from afspec import ValidationError, validate_artifact
-
-    with pytest.raises(ValidationError):
-        validate_artifact("requirements", {})
+def test_glossary_as_array_rejected():
+    """Glossary as an array of objects is rejected by Pydantic."""
+    data = dict(VALID_REQUIREMENTS)
+    data["glossary"] = [{"term": "token", "definition": "A credential"}]
+    with pytest.raises(PydanticValidationError):
+        Requirements(**data)
 
 
 # ===================================================================
-# Property Tests
+# EARS pattern tests
 # ===================================================================
 
-# -------------------------------------------------------------------
-# TS-08-P1: Valid content passes
-# -------------------------------------------------------------------
+
+def test_ears_criterion_event_driven():
+    """Event-driven EARS pattern constructs correctly."""
+    from afspec import Criterion, EARSPattern
+
+    c = Criterion(
+        id="R1.1",
+        ears_pattern=EARSPattern.EVENT_DRIVEN,
+        trigger="a request arrives",
+        system="the system",
+        action="shall validate the token",
+    )
+    assert c.ears_pattern == EARSPattern.EVENT_DRIVEN
+    assert c.trigger == "a request arrives"
+
+
+def test_ears_pattern_string_accepted():
+    """EARS pattern as string is accepted by Pydantic."""
+    from afspec import Criterion
+
+    c = Criterion(
+        id="R1.1",
+        ears_pattern="event_driven",
+        trigger="a request arrives",
+        system="the system",
+        action="shall validate",
+    )
+    assert c.ears_pattern.value == "event_driven"
+
+
+# ===================================================================
+# Round-trip serialization tests
+# ===================================================================
+
+
+def test_requirements_round_trip():
+    """Requirements model round-trips through JSON."""
+    from afspec import marshal_json
+
+    model = Requirements(**VALID_REQUIREMENTS)
+    json_str = marshal_json(model)
+    parsed = json.loads(json_str)
+    model2 = Requirements(**parsed)
+    assert model2.spec_id == model.spec_id
+    assert model2.introduction == model.introduction
+
+
+# ===================================================================
+# Property tests
+# ===================================================================
 
 
 @given(
@@ -189,109 +208,33 @@ def test_empty_dict_fails():
     extra_id=st.text(min_size=1, max_size=20),
 )
 @settings(max_examples=30)
-def test_valid_content_property(name: str, extra_id: str):
-    """TS-08-P1: Any content conforming to the schema passes validation."""
-    from afspec import validate_artifact
-
-    # Build a valid artifact dict with a varying spec_id
-    content = dict(VALID_CONTENT_FOR[name])
-    content["spec_id"] = extra_id if extra_id.strip() else "x"
-    result = validate_artifact(name, content)
-    assert result is None
-
-
-# -------------------------------------------------------------------
-# TS-08-P2: Invalid content fails
-# -------------------------------------------------------------------
-
-
-@given(name=st.sampled_from(ARTIFACT_NAMES))
-@settings(max_examples=15)
-def test_invalid_content_property(name: str):
-    """TS-08-P2: Content with required fields removed fails validation."""
-    from afspec import ValidationError, validate_artifact
-
-    # Remove all required fields -> guaranteed schema violation
-    with pytest.raises(ValidationError):
-        validate_artifact(name, {"not_a_real_field": True})
-
-
-@given(name=st.sampled_from(ARTIFACT_NAMES))
-@settings(max_examples=15)
-def test_invalid_content_wrong_type(name: str):
-    """TS-08-P2 (variant): Content with wrong types fails validation."""
-    from afspec import ValidationError, validate_artifact
-
-    # schema_version must be an integer with const value 1
-    content = dict(VALID_CONTENT_FOR[name])
-    content["schema_version"] = "not_an_int"
-    with pytest.raises(ValidationError):
-        validate_artifact(name, content)
-
-
-# -------------------------------------------------------------------
-# TS-08-P3: Name-schema bijection
-# -------------------------------------------------------------------
-
-
-@given(name=st.text(min_size=1, max_size=30))
-@settings(max_examples=50)
-def test_name_schema_bijection(name: str):
-    """TS-08-P3: Valid names succeed, invalid names raise ValueError."""
-    from afspec import validate_artifact
-
-    valid_names = {"requirements", "test_spec", "tasks"}
-    if name in valid_names:
-        # Should NOT raise ValueError (may raise ValidationError for content)
-        try:
-            validate_artifact(name, VALID_CONTENT_FOR[name])
-        except ValueError:
-            pytest.fail(f"Valid name {name!r} raised ValueError")
-    else:
-        with pytest.raises(ValueError):
-            validate_artifact(name, {})
-
-
-# -------------------------------------------------------------------
-# TS-08-P4: Error detail preservation
-# -------------------------------------------------------------------
-
-
-@given(name=st.sampled_from(ARTIFACT_NAMES))
-@settings(max_examples=15)
-def test_error_detail_preservation(name: str):
-    """TS-08-P4: ValidationError always contains artifact name and errors."""
-    from afspec import ValidationError, validate_artifact
-
-    with pytest.raises(ValidationError) as exc_info:
-        validate_artifact(name, {})
-    exc = exc_info.value
-    assert exc.artifact_name == name
-    assert len(exc.errors) >= 1
+def test_valid_content_varying_spec_id(name: str, extra_id: str):
+    """Any valid content with a varying spec_id constructs successfully."""
+    model_cls, valid_data = ARTIFACT_MODELS[name]
+    data = dict(valid_data)
+    data["spec_id"] = extra_id if extra_id.strip() else "x"
+    model = model_cls(**data)
+    assert model.spec_id == data["spec_id"]
 
 
 # ===================================================================
-# TS-08-6: Agent wrapper calls afspec directly
+# Agent integration — model construction is the validation
 # ===================================================================
 
 
-def test_agent_wrapper_direct_call():
-    """TS-08-6: speclib/agent.py validate_artifact calls afspec directly."""
-    from speclib.agent import validate_artifact as agent_validate
+def test_agent_uses_pydantic_validation():
+    """speclib/agent.py uses Pydantic model construction for validation."""
+    import inspect
 
-    source = inspect.getsource(agent_validate)
-    assert "afspec.validate_artifact(" in source
-    assert "getattr" not in source
+    from speclib import agent
 
-
-# ===================================================================
-# TS-08-SMOKE-1: End-to-end validation with real schemas
-# ===================================================================
+    source = inspect.getsource(agent.SpecAgent.generate_artifacts)
+    assert "model_validate" in source
+    assert "PydanticValidationError" in source or "ValidationError" in source
 
 
-def test_validate_artifact_smoke():
-    """TS-08-SMOKE-1: End-to-end validation using real bundled schemas."""
-    from speclib.agent import validate_artifact
-
-    result = validate_artifact("requirements", VALID_REQUIREMENTS)
-    assert result is None
+def test_model_validate_smoke():
+    """End-to-end: model_validate constructs valid artifact."""
+    model = Requirements.model_validate(VALID_REQUIREMENTS)
+    assert model.spec_id == "test-01"
+    assert model.introduction == "A test requirements artifact."

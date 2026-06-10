@@ -106,13 +106,7 @@ def _sample_assessment_dict(
 @pytest.mark.asyncio
 async def test_session_assess_delegates_to_agent(tmp_path: Path) -> None:
     """TS-03-27: SpecSession.assess() creates a SpecAgent, calls assess_prd,
-    and persists the result.
-
-    The session should:
-    - Call SpecAgent.assess_prd with the PRD text
-    - Persist the Assessment to _session.json (append to assessment_history)
-    - Transition state to 'assessing'
-    """
+    and persists the result."""
     session = _create_test_session(tmp_path, SessionState.INIT)
 
     assessment = Assessment(
@@ -203,12 +197,15 @@ async def test_session_generate_delegates_and_writes_files(
 ) -> None:
     """TS-03-29: SpecSession.generate() calls generate_artifacts,
     writes files, and transitions to 'generated'."""
+    from afspec import Requirements, Tasks, TestSpec
+
     session = _create_test_session(tmp_path, SessionState.PRD_ACCEPTED)
 
+    # Return afspec model instances (as generate_artifacts now does)
     artifacts = {
-        "requirements": SAMPLE_REQUIREMENTS_JSON,
-        "test_spec": SAMPLE_TEST_SPEC_JSON,
-        "tasks": SAMPLE_TASKS_JSON,
+        "requirements": Requirements(**SAMPLE_REQUIREMENTS_JSON),
+        "test_spec": TestSpec(**SAMPLE_TEST_SPEC_JSON),
+        "tasks": Tasks(**SAMPLE_TASKS_JSON),
     }
 
     mock_agent_instance = MagicMock()
@@ -217,9 +214,7 @@ async def test_session_generate_delegates_and_writes_files(
     with (
         patch("speclib.session.SpecAgent", return_value=mock_agent_instance),
         patch("speclib.session.create_client", return_value=MagicMock()),
-        patch("speclib.session.afspec") as mock_afspec,
     ):
-        mock_afspec.validate.return_value = MagicMock(valid=True)
         await session.generate()
 
     # All three artifact files should exist
@@ -323,34 +318,24 @@ async def test_assessment_history_accumulates(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_partial_generation_preserves_artifacts(tmp_path: Path) -> None:
     """TS-03-E13: When generation fails on second artifact, the first
-    artifact remains on disk and session stays in 'generating'.
-
-    Uses a real SpecAgent (not mocked) with a mocked client so that
-    the session's incremental artifact-write behavior is exercised.
-    The session should write requirements.json to disk after generating
-    it successfully, then fail on test_spec — leaving requirements.json
-    intact.
-    """
+    artifact remains on disk and session stays in 'generating'."""
     session = _create_test_session(tmp_path, SessionState.PRD_ACCEPTED)
 
-    # Mock client: first call succeeds (requirements),
-    # second fails permanently with a non-retryable error (test_spec)
     mock_client = MagicMock()
     mock_client.messages.create = AsyncMock(
         side_effect=[
             make_artifact_response("requirements", SAMPLE_REQUIREMENTS_JSON),
-            make_bad_request_error(),  # Non-retryable, fails immediately
+            make_bad_request_error(),
         ]
     )
 
     with (
         patch("speclib.session.create_client", return_value=mock_client),
-        patch("speclib.agent.validate_artifact", return_value=None),
     ):
         with pytest.raises(AgentError):
             await session.generate()
 
-    # requirements.json should have been written by the session during generation
+    # requirements.json should have been written during generation
     assert (session.spec_dir / "requirements.json").exists()
     # test_spec.json should not exist (failed to generate)
     assert not (session.spec_dir / "test_spec.json").exists()
@@ -366,17 +351,15 @@ async def test_partial_generation_preserves_artifacts(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_resume_after_partial_generation(tmp_path: Path) -> None:
     """TS-03-E14: Resumed session detects existing artifacts and
-    generates only missing ones.
+    generates only missing ones."""
+    from afspec import Requirements, marshal_json
 
-    Uses a real SpecAgent (not mocked) with a mocked client so that
-    the API call count can be verified — only 2 calls should be made
-    (for test_spec and tasks), not 3.
-    """
     session = _create_test_session(tmp_path, SessionState.GENERATING)
 
-    # Pre-write requirements.json as if it was generated before failure
+    # Pre-write requirements.json as a valid afspec model
+    req_model = Requirements(**SAMPLE_REQUIREMENTS_JSON)
     (session.spec_dir / "requirements.json").write_text(
-        json.dumps(SAMPLE_REQUIREMENTS_JSON, indent=2)
+        marshal_json(req_model)
     )
 
     # Mock client returns only 2 responses (for the missing artifacts)
@@ -390,10 +373,7 @@ async def test_resume_after_partial_generation(tmp_path: Path) -> None:
 
     with (
         patch("speclib.session.create_client", return_value=mock_client),
-        patch("speclib.agent.validate_artifact", return_value=None),
-        patch("speclib.session.afspec") as mock_afspec,
     ):
-        mock_afspec.validate.return_value = MagicMock(valid=True)
         await session.generate()
 
     # All three artifacts should now exist
@@ -424,16 +404,7 @@ class TestPropertyPartialArtifacts:
         self, failure_point: int, tmp_path: Path
     ) -> None:
         """TS-03-P5: For any generation failure at artifact N,
-        artifacts 1..N-1 remain on disk.
-
-        Property 5 from design.md.
-        Validates: 03-REQ-6.E1
-
-        Uses a real SpecAgent (not mocked) with a mocked client so that
-        the session's incremental artifact-write behavior is exercised.
-        The mock client succeeds for artifacts before failure_point, then
-        fails with a non-retryable error at the failure_point artifact.
-        """
+        artifacts 1..N-1 remain on disk."""
         import asyncio
 
         artifact_names = ["requirements", "test_spec", "tasks"]
@@ -447,8 +418,6 @@ class TestPropertyPartialArtifacts:
             tmp_path, SessionState.PRD_ACCEPTED
         )
 
-        # Build mock client responses: succeed for artifacts before
-        # failure_point, then fail with non-retryable error
         side_effects: list = []
         for i in range(failure_point):
             side_effects.append(
@@ -468,22 +437,15 @@ class TestPropertyPartialArtifacts:
                 "speclib.session.create_client",
                 return_value=mock_client,
             ),
-            patch(
-                "speclib.agent.validate_artifact",
-                return_value=None,
-            ),
         ):
             with pytest.raises(AgentError):
                 asyncio.run(session.generate())
 
-        # Artifacts before failure point should exist on disk
-        # (written incrementally by the session during generation)
         for i in range(failure_point):
             assert (
                 session.spec_dir / f"{artifact_names[i]}.json"
             ).exists(), f"{artifact_names[i]}.json should exist"
 
-        # State should not be generated
         assert session.state != SessionState.GENERATED
 
 
@@ -495,11 +457,7 @@ class TestPropertyPartialArtifacts:
 @pytest.mark.asyncio
 async def test_smoke_full_assessment_flow(tmp_path: Path) -> None:
     """TS-03-SMOKE-1: Full path from SpecSession.assess() through
-    SpecAgent.assess_prd() to persisted Assessment.
-
-    Execution Path: Path 1 from design.md.
-    Must NOT satisfy with: Bypassing SpecAgent.
-    """
+    SpecAgent.assess_prd() to persisted Assessment."""
     camp = Campaign.create(tmp_path / "smoke1", "Test", "Desc")
     session = camp.new_spec(
         "test_spec", "# My PRD\n## Intent\nBuild something"
@@ -533,7 +491,6 @@ async def test_smoke_full_assessment_flow(tmp_path: Path) -> None:
     data = json.loads((session.spec_dir / "_session.json").read_text())
     assert data["assessment_history"][-1]["quality"] == "needs_refinement"
 
-    # Verify it went through SpecAgent (not bypassed)
     mock_agent_instance.assess_prd.assert_called_once()
 
 
@@ -545,11 +502,7 @@ async def test_smoke_full_assessment_flow(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_smoke_full_refinement_flow(tmp_path: Path) -> None:
     """TS-03-SMOKE-2: Full path from SpecSession.refine() through
-    SpecAgent.refine_prd() to updated PRD and new Assessment.
-
-    Execution Path: Path 2 from design.md.
-    Must NOT satisfy with: Bypassing SpecAgent or only testing state transitions.
-    """
+    SpecAgent.refine_prd() to updated PRD and new Assessment."""
     prev_assessment_dict = _sample_assessment_dict()
     session = _create_test_session(
         tmp_path,
@@ -584,7 +537,6 @@ async def test_smoke_full_refinement_flow(tmp_path: Path) -> None:
     data = json.loads((session.spec_dir / "_session.json").read_text())
     assert len(data["assessment_history"]) == 2
 
-    # Verify it went through SpecAgent
     mock_agent_instance.refine_prd.assert_called_once()
 
 
@@ -596,17 +548,15 @@ async def test_smoke_full_refinement_flow(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_smoke_full_generation_flow(tmp_path: Path) -> None:
     """TS-03-SMOKE-3: Full path from SpecSession.generate() through
-    SpecAgent.generate_artifacts() to written and validated artifact files.
+    SpecAgent.generate_artifacts() to written artifact files."""
+    from afspec import Requirements, Tasks, TestSpec
 
-    Execution Path: Path 3 from design.md.
-    Must NOT satisfy with: Writing files directly without going through SpecAgent.
-    """
     session = _create_test_session(tmp_path, SessionState.PRD_ACCEPTED)
 
     artifacts = {
-        "requirements": SAMPLE_REQUIREMENTS_JSON,
-        "test_spec": SAMPLE_TEST_SPEC_JSON,
-        "tasks": SAMPLE_TASKS_JSON,
+        "requirements": Requirements(**SAMPLE_REQUIREMENTS_JSON),
+        "test_spec": TestSpec(**SAMPLE_TEST_SPEC_JSON),
+        "tasks": Tasks(**SAMPLE_TASKS_JSON),
     }
 
     mock_agent_instance = MagicMock()
@@ -615,9 +565,7 @@ async def test_smoke_full_generation_flow(tmp_path: Path) -> None:
     with (
         patch("speclib.session.SpecAgent", return_value=mock_agent_instance),
         patch("speclib.session.create_client", return_value=MagicMock()),
-        patch("speclib.session.afspec") as mock_afspec,
     ):
-        mock_afspec.validate.return_value = MagicMock(valid=True)
         await session.generate()
 
     for name in ["requirements.json", "test_spec.json", "tasks.json"]:
@@ -627,7 +575,6 @@ async def test_smoke_full_generation_flow(tmp_path: Path) -> None:
 
     assert session.state == SessionState.GENERATED
 
-    # Verify it went through SpecAgent
     mock_agent_instance.generate_artifacts.assert_called_once()
 
 
@@ -639,17 +586,9 @@ async def test_smoke_full_generation_flow(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_smoke_retry_and_recovery(tmp_path: Path) -> None:
     """TS-03-SMOKE-4: Full path demonstrating retry on transient error
-    followed by successful completion.
-
-    Execution Path: Path 4 from design.md.
-    Must NOT satisfy with: Skipping the retry mechanism.
-
-    Uses a real SpecAgent (not mocked) with a mocked Anthropic client
-    so that the retry logic in _call_api is actually exercised.
-    """
+    followed by successful completion."""
     session = _create_test_session(tmp_path, SessionState.INIT)
 
-    # Mock the client to return 429 on first call, then succeed
     mock_client = MagicMock()
     mock_client.messages.create = AsyncMock(
         side_effect=[
@@ -668,5 +607,4 @@ async def test_smoke_retry_and_recovery(tmp_path: Path) -> None:
         await session.assess()
 
     assert session.state == SessionState.ASSESSING
-    # Verify retry actually happened: 2 API calls (1 failed + 1 succeeded)
     assert mock_client.messages.create.call_count == 2

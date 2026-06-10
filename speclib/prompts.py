@@ -159,15 +159,13 @@ def generation_system_prompt() -> str:
     return (
         "You are a senior requirements engineer generating spec artifacts "
         "from an accepted Product Requirements Document (PRD).\n\n"
-        "You will generate one artifact at a time. Each artifact must "
-        "conform to the spec-format v1.2 JSON schema. Produce valid JSON "
-        "that passes schema validation.\n\n"
-        "Use the submit_artifact tool to return the generated artifact "
-        "content. Set the artifact_name field to the name of the artifact "
-        "you are generating, and the content field to the full JSON object "
-        "matching the schema.\n\n"
+        "You will generate one artifact at a time. The tool schema "
+        "defines the exact structure — fill in the content fields "
+        "according to that schema.\n\n"
+        "Do NOT include spec_id, spec_name, or schema_version in your "
+        "output — these are injected automatically.\n\n"
         "Important guidelines:\n"
-        "- Follow the JSON schema exactly; do not add extra fields.\n"
+        "- Follow the tool schema exactly; do not add extra fields.\n"
         "- Ensure all cross-references (requirement IDs, test IDs) are "
         "consistent.\n"
         "- Write clear, specific, and testable requirements.\n"
@@ -211,12 +209,7 @@ def generation_user_prompt(
             "domain-specific terms used in backtick-delimited references "
             "within acceptance criteria, edge cases, and correctness "
             "properties. Every backtick-wrapped term that carries domain "
-            "meaning must have a glossary entry.\n\n"
-            "The `glossary` value must be a flat JSON object mapping term "
-            "strings to definition strings, e.g. "
-            '`{"bootstrap token": "The long-lived API key...", '
-            '"API key": "A time-bound credential..."}`. '
-            "Do NOT use an array of objects.\n"
+            "meaning must have a glossary entry.\n"
         )
     elif artifact_name == "test_spec":
         parts.append(
@@ -233,7 +226,8 @@ def generation_user_prompt(
         )
 
     parts.append(
-        "Use the submit_artifact tool to return the generated artifact."
+        f"Use the submit_{artifact_name} tool to return the generated "
+        f"artifact."
     )
 
     return "\n".join(parts)
