@@ -75,26 +75,26 @@ using the `jsonschema` library. Then removes the graceful skip in
     - [x] `jsonschema` is importable: `uv run python -c "import jsonschema"`
     - [x] No linter warnings introduced
 
-- [ ] 3. Implement validate_artifact and wire into agent
-  - [ ] 3.1 Create `packages/afspec/afspec/validation.py`
+- [x] 3. Implement validate_artifact and wire into agent
+  - [x] 3.1 Create `packages/afspec/afspec/validation.py`
     - Implement `ValidationError` class with `artifact_name` and `errors`
     - Implement `validate_artifact()` with schema loading and validation
     - Implement `_load_schema()` helper using `importlib.resources`
     - _Requirements: 08-REQ-1.1 through 08-REQ-1.4, 08-REQ-4.1, 08-REQ-4.2_
 
-  - [ ] 3.2 Export from `packages/afspec/afspec/__init__.py`
+  - [x] 3.2 Export from `packages/afspec/afspec/__init__.py`
     - Export `validate_artifact` and `ValidationError`
     - _Requirements: 08-REQ-1.1_
 
-  - [ ] 3.3 Remove graceful skip in `speclib/agent.py`
+  - [x] 3.3 Remove graceful skip in `speclib/agent.py`
     - Replace `getattr(afspec, "validate_artifact", None)` with direct call
     - _Requirements: 08-REQ-3.1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests pass: `uv run pytest -q tests/test_afspec_validation.py`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check speclib/ tests/ packages/`
-    - [ ] Requirements 08-REQ-1.*, 08-REQ-2.*, 08-REQ-3.*, 08-REQ-4.* met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests pass: `uv run pytest -q tests/test_afspec_validation.py`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check speclib/ tests/ packages/`
+    - [x] Requirements 08-REQ-1.*, 08-REQ-2.*, 08-REQ-3.*, 08-REQ-4.* met
 
 - [ ] 4. Wiring verification
   - [ ] 4.1 Trace every execution path from design.md end-to-end
