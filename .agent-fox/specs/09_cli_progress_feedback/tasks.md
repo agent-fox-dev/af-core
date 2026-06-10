@@ -110,32 +110,32 @@ self-contained — it wraps Rich's `Live` + `Spinner` behind a context manager.
     - [x] No linter warnings: `uv run ruff check speclib/ tests/`
     - [x] Requirements 09-REQ-1.*, 09-REQ-2.*, 09-REQ-3.* met
 
-- [ ] 4. Wiring verification
-  - [ ] 4.1 Trace every execution path from design.md end-to-end
+- [x] 4. Wiring verification
+  - [x] 4.1 Trace every execution path from design.md end-to-end
     - Path 1 (assess with spinner): CLI → StatusSpinner → session.assess → stop
     - Path 2 (generate with updates): CLI → StatusSpinner → generate → callback → update
     - Path 3 (quiet mode): CLI → StatusSpinner(quiet=True) → no output
     - _Requirements: all_
 
-  - [ ] 4.2 Verify return values propagate correctly
+  - [x] 4.2 Verify return values propagate correctly
     - StatusSpinner.__enter__ returns self with update/log methods
     - on_artifact callback receives (name, content) and calls spinner.update
     - _Requirements: all_
 
-  - [ ] 4.3 Run the integration smoke tests
+  - [x] 4.3 Run the integration smoke tests
     - TS-09-SMOKE-1 and TS-09-SMOKE-2 pass
     - _Test Spec: TS-09-SMOKE-1, TS-09-SMOKE-2_
 
-  - [ ] 4.4 Stub / dead-code audit
+  - [x] 4.4 Stub / dead-code audit
     - Verify no unused imports in `speclib/ui.py`
     - Verify `--quiet` is consumed in all async commands
     - _Requirements: all_
 
-  - [ ] 4.V Verify wiring group
-    - [ ] All smoke tests pass
-    - [ ] No unjustified stubs remain in touched files
-    - [ ] All execution paths from design.md are live
-    - [ ] All existing tests still pass: `uv run pytest -q`
+  - [x] 4.V Verify wiring group
+    - [x] All smoke tests pass
+    - [x] No unjustified stubs remain in touched files
+    - [x] All execution paths from design.md are live
+    - [x] All existing tests still pass: `uv run pytest -q`
 
 ## Traceability
 
