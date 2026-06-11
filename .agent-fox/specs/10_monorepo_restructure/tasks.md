@@ -15,10 +15,15 @@ monorepo under `packages/`. The approach is:
 
 1. Write structural tests first (task group 1)
 2. Create the library package (task group 2)
-3. Create the CLI package (task group 3)
-4. Update root configuration files (task group 4)
-5. Remove old directories and verify (task group 5)
-6. Wiring verification (task group 6)
+3. Create the spec-cli package skeleton and pyproject.toml (task group 3)
+4. Move CLI source modules (task group 4)
+5. Update CLI imports and program name (task group 5)
+6. Move CLI tests and update test imports (task group 6)
+7. Checkpoint — spec-cli package complete (task group 7)
+8. Rewrite root pyproject.toml and regenerate lock file (task group 8)
+9. Update root Makefile (task group 9)
+10. Remove old directories and update documentation (task group 10)
+11. Wiring verification (task group 11)
 
 The restructure preserves all business logic and only changes file
 locations, import paths, and configuration files.
@@ -117,31 +122,13 @@ locations, import paths, and configuration files.
     - [x] Spec tests TS-10-1, TS-10-2, TS-10-14, TS-10-15 pass
     - [x] No linter warnings: `uv run ruff check packages/speclib/`
 
-- [ ] 3. Create spec-cli package
-  - [ ] 3.1 Create `packages/spec-cli/` directory structure
-    - Create `packages/spec-cli/spec_cli/` directory
-    - Create `packages/spec-cli/tests/` directory
+- [ ] 3. Create spec-cli package skeleton
+  - [ ] 3.1 Create `packages/spec-cli/spec_cli/` directory
+    - Create `packages/spec-cli/spec_cli/` source directory
+    - Create `packages/spec-cli/spec_cli/__init__.py`
     - _Requirements: 10-REQ-2.5_
 
-  - [ ] 3.2 Move CLI modules via git mv
-    - `git mv speclib/cli.py packages/spec-cli/spec_cli/cli.py`
-    - `git mv speclib/ui.py packages/spec-cli/spec_cli/ui.py`
-    - `git mv speclib/skill/ packages/spec-cli/spec_cli/skill/`
-    - Create `packages/spec-cli/spec_cli/__init__.py`
-    - _Requirements: 10-REQ-2.5, 10-REQ-2.6_
-
-  - [ ] 3.3 Update imports in cli.py
-    - Change `from speclib.campaign import Campaign` (stays the same)
-    - Change `from speclib.errors import ...` (stays the same)
-    - Change `from speclib.session import SpecSession` (stays the same)
-    - Change `from speclib.ui import StatusSpinner` to
-      `from spec_cli.ui import StatusSpinner`
-    - Update `install-skill` command imports: change
-      `from speclib.skill import ...` to `from spec_cli.skill import ...`
-    - Update CLI group help text from "af-spec" to "spec"
-    - _Requirements: 10-REQ-6.3, 10-REQ-6.4, 10-REQ-2.E1_
-
-  - [ ] 3.4 Create `packages/spec-cli/pyproject.toml`
+  - [ ] 3.2 Create `packages/spec-cli/pyproject.toml`
     - Set name to `spec-cli`, version `0.1.0`
     - Set `requires-python = ">=3.14"`
     - Declare dependencies: `speclib`, `click`, `rich`
@@ -152,28 +139,87 @@ locations, import paths, and configuration files.
     - Add `[tool.pytest.ini_options]` with `testpaths = ["tests"]`
     - _Requirements: 10-REQ-2.1, 10-REQ-2.2, 10-REQ-2.3_
 
-  - [ ] 3.5 Move CLI tests
-    - Move `tests/test_cli.py` to `packages/spec-cli/tests/test_cli.py`
-    - Move `tests/test_ui.py` to `packages/spec-cli/tests/test_ui.py`
-    - Move `tests/test_skill.py` to `packages/spec-cli/tests/test_skill.py`
-    - Move `tests/test_install_skill.py` to
-      `packages/spec-cli/tests/test_install_skill.py`
-    - Create `packages/spec-cli/tests/__init__.py`
-    - Create `packages/spec-cli/tests/conftest.py` if needed
-    - Update import paths in moved test files (e.g., `from speclib.cli`
-      → `from spec_cli.cli`, `from speclib.ui` → `from spec_cli.ui`)
-    - _Requirements: 10-REQ-4.2_
-
   - [ ] 3.V Verify task group 3
-    - [ ] CLI modules exist at `packages/spec-cli/spec_cli/`
-    - [ ] `packages/spec-cli/pyproject.toml` is valid
-    - [ ] CLI tests exist at `packages/spec-cli/tests/`
-    - [ ] Spec tests TS-10-3, TS-10-4, TS-10-5, TS-10-6, TS-10-7,
-          TS-10-8 pass
+    - [ ] `packages/spec-cli/spec_cli/__init__.py` exists
+    - [ ] `packages/spec-cli/pyproject.toml` is valid TOML
+    - [ ] Spec tests TS-10-3, TS-10-4 pass
     - [ ] No linter warnings: `uv run ruff check packages/spec-cli/`
 
-- [ ] 4. Update root configuration
-  - [ ] 4.1 Rewrite root `pyproject.toml`
+- [ ] 4. Move CLI source modules
+  - [ ] 4.1 Move cli.py and ui.py via git mv
+    - `git mv speclib/cli.py packages/spec-cli/spec_cli/cli.py`
+    - `git mv speclib/ui.py packages/spec-cli/spec_cli/ui.py`
+    - _Requirements: 10-REQ-2.5_
+
+  - [ ] 4.2 Move skill/ directory via git mv
+    - `git mv speclib/skill/ packages/spec-cli/spec_cli/skill/`
+    - _Requirements: 10-REQ-2.6_
+
+  - [ ] 4.V Verify task group 4
+    - [ ] `packages/spec-cli/spec_cli/cli.py` exists
+    - [ ] `packages/spec-cli/spec_cli/ui.py` exists
+    - [ ] `packages/spec-cli/spec_cli/skill/__init__.py` exists
+    - [ ] `packages/spec-cli/spec_cli/skill/af-spec.md` exists
+    - [ ] Spec tests TS-10-6, TS-10-8 pass
+    - [ ] No linter warnings: `uv run ruff check packages/spec-cli/`
+
+- [ ] 5. Update CLI imports and program name
+  - [ ] 5.1 Update imports in cli.py
+    - Keep `from speclib.campaign import Campaign` (unchanged)
+    - Keep `from speclib.errors import ...` (unchanged)
+    - Keep `from speclib.session import SpecSession` (unchanged)
+    - Change `from speclib.ui import StatusSpinner` to
+      `from spec_cli.ui import StatusSpinner`
+    - Change `from speclib.skill import ...` to
+      `from spec_cli.skill import ...`
+    - _Requirements: 10-REQ-6.3, 10-REQ-6.4_
+
+  - [ ] 5.2 Update CLI group help text
+    - Update CLI group help text from "af-spec" to "spec"
+    - _Requirements: 10-REQ-2.E1_
+
+  - [ ] 5.V Verify task group 5
+    - [ ] `cli.py` imports business logic from `speclib`
+    - [ ] `cli.py` imports `StatusSpinner` from `spec_cli.ui`
+    - [ ] `cli.py` imports skill from `spec_cli.skill`
+    - [ ] Spec tests TS-10-5, TS-10-6, TS-10-7 pass
+    - [ ] No linter warnings: `uv run ruff check packages/spec-cli/`
+
+- [ ] 6. Move CLI tests and update test imports
+  - [ ] 6.1 Move test files to `packages/spec-cli/tests/`
+    - `git mv tests/test_cli.py packages/spec-cli/tests/test_cli.py`
+    - `git mv tests/test_ui.py packages/spec-cli/tests/test_ui.py`
+    - `git mv tests/test_skill.py packages/spec-cli/tests/test_skill.py`
+    - `git mv tests/test_install_skill.py packages/spec-cli/tests/test_install_skill.py`
+    - _Requirements: 10-REQ-4.2_
+
+  - [ ] 6.2 Create test infrastructure files
+    - Create `packages/spec-cli/tests/__init__.py`
+    - Create `packages/spec-cli/tests/conftest.py` if needed
+    - _Requirements: 10-REQ-4.2_
+
+  - [ ] 6.3 Update import paths in moved test files
+    - Change `from speclib.cli` → `from spec_cli.cli`
+    - Change `from speclib.ui` → `from spec_cli.ui`
+    - Change `from speclib.skill` → `from spec_cli.skill`
+    - Update any patch targets that reference `speclib.cli` or
+      `speclib.ui` to use `spec_cli.cli` / `spec_cli.ui`
+    - _Requirements: 10-REQ-4.2, 10-REQ-4.E1_
+
+  - [ ] 6.V Verify task group 6
+    - [ ] CLI tests exist at `packages/spec-cli/tests/`
+    - [ ] No test in `packages/speclib/tests/` imports from `spec_cli`
+    - [ ] Spec tests TS-10-E2, TS-10-P3 pass
+    - [ ] No linter warnings: `uv run ruff check packages/spec-cli/`
+
+- [ ] 7. Checkpoint - spec-cli Package Complete
+  - Ensure all spec-cli spec tests pass
+  - Verify `spec_cli` package is importable
+  - Verify all CLI subcommands are registered
+  - _Test Spec: TS-10-3 through TS-10-8, TS-10-E2, TS-10-P3_
+
+- [ ] 8. Rewrite root pyproject.toml and regenerate lock file
+  - [ ] 8.1 Rewrite root `pyproject.toml`
     - Change project name to `speclib-workspace`
     - Remove `[project.scripts]` section
     - Update dependencies to reference `spec-cli` (which pulls in
@@ -184,7 +230,19 @@ locations, import paths, and configuration files.
     - Keep shared `[tool.ruff]` and `[tool.mypy]` configuration
     - _Requirements: 10-REQ-3.1, 10-REQ-3.2, 10-REQ-3.3, 10-REQ-3.4_
 
-  - [ ] 4.2 Update root Makefile
+  - [ ] 8.2 Run `uv sync` to regenerate lock file
+    - Run `uv sync` from repo root to resolve all path dependencies
+    - Verify all packages are installed in the virtual environment
+    - _Requirements: 10-REQ-3.E1_
+
+  - [ ] 8.V Verify task group 8
+    - [ ] Root `pyproject.toml` has no `[project.scripts]`
+    - [ ] Root `pyproject.toml` has all UV sources
+    - [ ] `uv sync` succeeds
+    - [ ] Spec tests TS-10-9, TS-10-10, TS-10-13 pass
+
+- [ ] 9. Update root Makefile
+  - [ ] 9.1 Update Makefile targets
     - Update `lint` target to run ruff and mypy across all package
       source directories
     - Update `test` target to run pytest across all packages
@@ -193,48 +251,40 @@ locations, import paths, and configuration files.
     - _Requirements: 10-REQ-5.1, 10-REQ-5.2, 10-REQ-5.3, 10-REQ-5.4,
       10-REQ-5.5_
 
-  - [ ] 4.3 Run `uv sync` to regenerate lock file
-    - Run `uv sync` from repo root to resolve all path dependencies
-    - Verify all packages are installed in the virtual environment
-    - _Requirements: 10-REQ-3.E1_
-
-  - [ ] 4.V Verify task group 4
-    - [ ] Root `pyproject.toml` has no `[project.scripts]`
-    - [ ] Root `pyproject.toml` has all UV sources
+  - [ ] 9.V Verify task group 9
     - [ ] Root Makefile has check, lint, test, clean targets
-    - [ ] `uv sync` succeeds
-    - [ ] Spec tests TS-10-9, TS-10-10, TS-10-11, TS-10-13 pass
+    - [ ] Spec test TS-10-11 passes
     - [ ] `make check` passes
 
-- [ ] 5. Checkpoint - Cleanup and Final Verification
-  - [ ] 5.1 Remove old top-level directories
+- [ ] 10. Remove old directories and update documentation
+  - [ ] 10.1 Remove old top-level directories
     - Remove `speclib/` directory (should be empty after git mv)
     - Remove `tests/` directory (should be empty after git mv)
     - Verify no stray files remain
     - _Requirements: 10-REQ-6.1, 10-REQ-6.2_
 
-  - [ ] 5.2 Update CLAUDE.md and README.md
+  - [ ] 10.2 Update CLAUDE.md and README.md
     - Update project structure description in CLAUDE.md
     - Update installation and usage instructions in README.md
     - Update test command references
     - _Requirements: documentation_
 
-  - [ ] 5.3 Run full verification
+  - [ ] 10.3 Run full verification
     - Run `make check` from repo root
     - Run `uv run pytest` from `packages/speclib/` (isolation check)
     - Run `uv run pytest` from `packages/spec-cli/` (isolation check)
     - Run `uv run pytest` from `packages/afspec/` (isolation check)
     - Verify all existing tests still pass
 
-  - [ ] 5.V Verify task group 5
+  - [ ] 10.V Verify task group 10
     - [ ] Old `speclib/` and `tests/` directories removed
     - [ ] Spec tests TS-10-12 pass
     - [ ] All existing tests pass: `make check`
     - [ ] `uv run pytest` works from each package directory
 
-- [ ] 6. Wiring verification
+- [ ] 11. Wiring verification
 
-  - [ ] 6.1 Trace every execution path from design.md end-to-end
+  - [ ] 11.1 Trace every execution path from design.md end-to-end
     - For Path 1 (`spec new`): verify `spec_cli.cli:new_cmd` calls
       `speclib.campaign:Campaign.open` and `Campaign.new_spec`
     - For Path 2 (`spec assess`): verify `spec_cli.cli:assess_cmd`
@@ -245,34 +295,34 @@ locations, import paths, and configuration files.
     - Every path must be live in production code
     - _Requirements: all_
 
-  - [ ] 6.2 Verify return values propagate correctly
+  - [ ] 11.2 Verify return values propagate correctly
     - For every function in this spec that returns data consumed by a
       caller, confirm the caller receives and uses the return value
     - Grep for callers of `Campaign.open`, `Campaign.new_spec`,
       `SpecSession.resume`; confirm none discards the return value
     - _Requirements: all_
 
-  - [ ] 6.3 Run the integration smoke tests
+  - [ ] 11.3 Run the integration smoke tests
     - All `TS-10-SMOKE-*` tests pass using real components
     - `spec new` creates spec directory through full chain
     - Library can be used without CLI
     - `make check` passes
     - _Test Spec: TS-10-SMOKE-1, TS-10-SMOKE-2, TS-10-SMOKE-3_
 
-  - [ ] 6.4 Stub / dead-code audit
+  - [ ] 11.4 Stub / dead-code audit
     - Search all files touched by this spec for: `return []`,
       `return None` on non-Optional returns, `pass` in non-abstract
       methods, `# TODO`, `# stub`, `NotImplementedError`
     - Each hit must be justified or replaced
     - Document any intentional stubs
 
-  - [ ] 6.5 Cross-spec entry point verification
+  - [ ] 11.5 Cross-spec entry point verification
     - Verify that `spec_cli.cli:main` (the console script entry point)
       is reachable from the installed `spec` command
     - Verify that `speclib.__init__` re-exports all public symbols
     - _Requirements: all_
 
-  - [ ] 6.V Verify wiring group
+  - [ ] 11.V Verify wiring group
     - [ ] All smoke tests pass
     - [ ] No unjustified stubs remain in touched files
     - [ ] All execution paths from design.md are live (traceable in code)
@@ -290,41 +340,41 @@ locations, import paths, and configuration files.
 | 10-REQ-1.5 | TS-10-15 | 2.3 | test_structure.py |
 | 10-REQ-1.E1 | TS-10-E1, TS-10-P1 | 2.3 | test_import_isolation.py |
 | 10-REQ-1.E2 | TS-10-E4 | 2.2 | test_import_isolation.py |
-| 10-REQ-2.1 | TS-10-3 | 3.4 | test_structure.py |
-| 10-REQ-2.2 | TS-10-4 | 3.4 | test_structure.py |
-| 10-REQ-2.3 | TS-10-4 | 3.4 | test_structure.py |
-| 10-REQ-2.4 | TS-10-5, TS-10-P3 | 3.2, 3.3 | test_cli_equivalence.py |
-| 10-REQ-2.5 | TS-10-6 | 3.2 | test_structure.py |
-| 10-REQ-2.6 | TS-10-8 | 3.2 | test_structure.py |
-| 10-REQ-2.E1 | TS-10-E2 | 3.3 | test_cli_equivalence.py |
-| 10-REQ-2.E2 | TS-10-E5 | 3.4 | test_structure.py |
-| 10-REQ-3.1 | TS-10-10 | 4.1 | test_structure.py |
-| 10-REQ-3.2 | TS-10-9 | 4.1 | test_structure.py |
-| 10-REQ-3.3 | TS-10-11 | 4.1 | test_structure.py |
-| 10-REQ-3.4 | TS-10-13 | 4.1 | test_structure.py |
-| 10-REQ-3.E1 | TS-10-P2 | 4.3 | manual / CI |
+| 10-REQ-2.1 | TS-10-3 | 3.2 | test_structure.py |
+| 10-REQ-2.2 | TS-10-4 | 3.2 | test_structure.py |
+| 10-REQ-2.3 | TS-10-4 | 3.2 | test_structure.py |
+| 10-REQ-2.4 | TS-10-5, TS-10-P3 | 4.1, 5.1 | test_cli_equivalence.py |
+| 10-REQ-2.5 | TS-10-6 | 3.1, 4.1 | test_structure.py |
+| 10-REQ-2.6 | TS-10-8 | 4.2 | test_structure.py |
+| 10-REQ-2.E1 | TS-10-E2 | 5.2 | test_cli_equivalence.py |
+| 10-REQ-2.E2 | TS-10-E5 | 3.2 | test_structure.py |
+| 10-REQ-3.1 | TS-10-10 | 8.1 | test_structure.py |
+| 10-REQ-3.2 | TS-10-9 | 8.1 | test_structure.py |
+| 10-REQ-3.3 | TS-10-11 | 8.1 | test_structure.py |
+| 10-REQ-3.4 | TS-10-13 | 8.1 | test_structure.py |
+| 10-REQ-3.E1 | TS-10-P2 | 8.2 | manual / CI |
 | 10-REQ-4.1 | TS-10-1 | 2.4 | test_structure.py |
-| 10-REQ-4.2 | TS-10-12 | 3.5 | test_structure.py |
-| 10-REQ-4.3 | TS-10-11, TS-10-SMOKE-3 | 4.2 | test_structure.py |
-| 10-REQ-4.E1 | TS-10-E7 | 3.5 | test_structure.py |
-| 10-REQ-4.4 | TS-10-P5 | 2.3, 3.4 | manual / CI |
-| 10-REQ-5.1 | TS-10-11 | 4.2 | test_structure.py |
-| 10-REQ-5.2 | TS-10-11 | 4.2 | test_structure.py |
-| 10-REQ-5.3 | TS-10-11 | 4.2 | test_structure.py |
-| 10-REQ-5.4 | TS-10-11 | 4.2 | test_structure.py |
-| 10-REQ-5.5 | TS-10-11 | 4.2 | test_structure.py |
-| 10-REQ-5.E1 | TS-10-P6 | 4.2 | manual / CI |
-| 10-REQ-6.1 | TS-10-12 | 5.1 | test_structure.py |
-| 10-REQ-6.2 | TS-10-12 | 5.1 | test_structure.py |
-| 10-REQ-6.3 | TS-10-6 | 3.3 | test_structure.py |
-| 10-REQ-6.4 | TS-10-7 | 3.3 | test_structure.py |
-| 10-REQ-6.5 | TS-10-P3 | 3.3 | test_cli_equivalence.py |
+| 10-REQ-4.2 | TS-10-12 | 6.1 | test_structure.py |
+| 10-REQ-4.3 | TS-10-11, TS-10-SMOKE-3 | 9.1 | test_structure.py |
+| 10-REQ-4.E1 | TS-10-E7 | 6.3 | test_structure.py |
+| 10-REQ-4.4 | TS-10-P5 | 2.3, 3.2 | manual / CI |
+| 10-REQ-5.1 | TS-10-11 | 9.1 | test_structure.py |
+| 10-REQ-5.2 | TS-10-11 | 9.1 | test_structure.py |
+| 10-REQ-5.3 | TS-10-11 | 9.1 | test_structure.py |
+| 10-REQ-5.4 | TS-10-11 | 9.1 | test_structure.py |
+| 10-REQ-5.5 | TS-10-11 | 9.1 | test_structure.py |
+| 10-REQ-5.E1 | TS-10-P6 | 9.1 | manual / CI |
+| 10-REQ-6.1 | TS-10-12 | 10.1 | test_structure.py |
+| 10-REQ-6.2 | TS-10-12 | 10.1 | test_structure.py |
+| 10-REQ-6.3 | TS-10-6 | 5.1 | test_structure.py |
+| 10-REQ-6.4 | TS-10-7 | 5.1 | test_structure.py |
+| 10-REQ-6.5 | TS-10-P3 | 5.1, 5.2 | test_cli_equivalence.py |
 | 10-REQ-6.E1 | TS-10-E3 | 2.2 | test_import_isolation.py |
 | 10-REQ-6.E2 | TS-10-E10 | 2.4 | test_import_isolation.py |
 | 10-REQ-7.1 | TS-10-P2 | 2.3 | manual / CI |
-| 10-REQ-7.2 | TS-10-P2 | 3.4 | manual / CI |
+| 10-REQ-7.2 | TS-10-P2 | 3.2 | manual / CI |
 | 10-REQ-7.3 | TS-10-P2 | (afspec unchanged) | manual / CI |
-| 10-REQ-7.E1 | TS-10-P2 | 3.4 | manual / CI |
+| 10-REQ-7.E1 | TS-10-P2 | 3.2 | manual / CI |
 
 ## Notes
 
