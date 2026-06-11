@@ -4,15 +4,10 @@ version = "0.0.0"
 description = "Monorepo workspace for speclib, spec-cli, and afspec"
 requires-python = ">=3.14"
 dependencies = [
-    "afspec>=0.1.0",
-    "anthropic[vertex,bedrock]>=0.40.0",
-    "click>=8.1",
-    "pyyaml>=6.0",
-    "rich>=13.0",
     "spec-cli>=0.1.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.25",

@@ -218,8 +218,8 @@ locations, import paths, and configuration files.
   - Verify all CLI subcommands are registered
   - _Test Spec: TS-10-3 through TS-10-8, TS-10-E2, TS-10-P3_
 
-- [ ] 8. Rewrite root pyproject.toml and regenerate lock file
-  - [ ] 8.1 Rewrite root `pyproject.toml`
+- [x] 8. Rewrite root pyproject.toml and regenerate lock file
+  - [x] 8.1 Rewrite root `pyproject.toml`
     - Change project name to `speclib-workspace`
     - Remove `[project.scripts]` section
     - Update dependencies to reference `spec-cli` (which pulls in
@@ -230,16 +230,16 @@ locations, import paths, and configuration files.
     - Keep shared `[tool.ruff]` and `[tool.mypy]` configuration
     - _Requirements: 10-REQ-3.1, 10-REQ-3.2, 10-REQ-3.3, 10-REQ-3.4_
 
-  - [ ] 8.2 Run `uv sync` to regenerate lock file
+  - [x] 8.2 Run `uv sync` to regenerate lock file
     - Run `uv sync` from repo root to resolve all path dependencies
     - Verify all packages are installed in the virtual environment
     - _Requirements: 10-REQ-3.E1_
 
-  - [ ] 8.V Verify task group 8
-    - [ ] Root `pyproject.toml` has no `[project.scripts]`
-    - [ ] Root `pyproject.toml` has all UV sources
-    - [ ] `uv sync` succeeds
-    - [ ] Spec tests TS-10-9, TS-10-10, TS-10-13 pass
+  - [x] 8.V Verify task group 8
+    - [x] Root `pyproject.toml` has no `[project.scripts]`
+    - [x] Root `pyproject.toml` has all UV sources
+    - [x] `uv sync` succeeds
+    - [x] Spec tests TS-10-9, TS-10-10, TS-10-13 pass
 
 - [ ] 9. Update root Makefile
   - [ ] 9.1 Update Makefile targets
