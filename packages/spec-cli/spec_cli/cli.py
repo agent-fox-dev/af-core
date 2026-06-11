@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Any
 
 import click
-
 from speclib.campaign import Campaign
 from speclib.errors import CampaignError, SessionError, SpeclibError
 from speclib.session import SpecSession

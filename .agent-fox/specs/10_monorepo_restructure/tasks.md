@@ -145,23 +145,23 @@ locations, import paths, and configuration files.
     - [x] Spec tests TS-10-3, TS-10-4 pass
     - [x] No linter warnings: `uv run ruff check packages/spec-cli/`
 
-- [ ] 4. Move CLI source modules
-  - [ ] 4.1 Move cli.py and ui.py via git mv
+- [x] 4. Move CLI source modules
+  - [x] 4.1 Move cli.py and ui.py via git mv
     - `git mv speclib/cli.py packages/spec-cli/spec_cli/cli.py`
     - `git mv speclib/ui.py packages/spec-cli/spec_cli/ui.py`
     - _Requirements: 10-REQ-2.5_
 
-  - [ ] 4.2 Move skill/ directory via git mv
+  - [x] 4.2 Move skill/ directory via git mv
     - `git mv speclib/skill/ packages/spec-cli/spec_cli/skill/`
     - _Requirements: 10-REQ-2.6_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] `packages/spec-cli/spec_cli/cli.py` exists
-    - [ ] `packages/spec-cli/spec_cli/ui.py` exists
-    - [ ] `packages/spec-cli/spec_cli/skill/__init__.py` exists
-    - [ ] `packages/spec-cli/spec_cli/skill/af-spec.md` exists
-    - [ ] Spec tests TS-10-6, TS-10-8 pass
-    - [ ] No linter warnings: `uv run ruff check packages/spec-cli/`
+  - [x] 4.V Verify task group 4
+    - [x] `packages/spec-cli/spec_cli/cli.py` exists
+    - [x] `packages/spec-cli/spec_cli/ui.py` exists
+    - [x] `packages/spec-cli/spec_cli/skill/__init__.py` exists
+    - [x] `packages/spec-cli/spec_cli/skill/af-spec.md` exists
+    - [x] Spec tests TS-10-6, TS-10-8 pass
+    - [x] No linter warnings: `uv run ruff check packages/spec-cli/`
 
 - [ ] 5. Update CLI imports and program name
   - [ ] 5.1 Update imports in cli.py
