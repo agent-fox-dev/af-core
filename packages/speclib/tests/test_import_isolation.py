@@ -80,10 +80,11 @@ def test_ts10_p4_module_placement_uniqueness() -> None:
         if not pkg_dir.is_dir() or pkg_dir.name.startswith("."):
             continue
         for py_file in pkg_dir.rglob("*.py"):
-            # Skip test files, __pycache__, and build artifacts
+            # Skip test files, __pycache__, venvs, and build artifacts
             parts = py_file.relative_to(pkg_dir).parts
             if any(
-                p in ("tests", "__pycache__", "build", "dist", ".eggs")
+                p in ("tests", "__pycache__", "build", "dist", ".eggs",
+                      ".venv", ".tox", ".nox", "node_modules")
                 for p in parts
             ):
                 continue

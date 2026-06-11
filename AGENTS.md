@@ -27,13 +27,25 @@ Do not implement anything before completing these steps.
 
 ## Project Structure
 
+This is a monorepo with three packages under `packages/`:
+
 ```
-<main_package>/         # Main package
-<test_directory>/       # Tests directory
+packages/
+  afspec/               # Spec-format library (models, validation, discovery)
+    afspec/             # Source package
+    tests/              # afspec tests
+  speclib/              # Core library (agent pipeline, sessions, campaigns)
+    speclib/            # Source package
+    tests/              # speclib tests
+  spec-cli/             # CLI tool (the `spec` command)
+    spec_cli/           # Source package
+    tests/              # spec-cli tests
 docs/                   # Documentation
-.agent-fox/specs/                 # Specs to be implemented
-.agent-fox/specs/archive/         # Old specs. Ignore for coding tasks, except for reference
+.agent-fox/specs/       # Specs to be implemented
+.agent-fox/specs/archive/ # Old specs. Ignore for coding tasks, except for reference
 ```
+
+Dependency direction: `spec-cli` → `speclib` → `afspec`.
 
 ## Spec-Driven Workflow
 

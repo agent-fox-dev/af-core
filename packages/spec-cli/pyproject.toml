@@ -26,9 +26,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-speclib = { path = "../speclib", editable = true }
+speclib = { workspace = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-import_mode = "importlib"
+addopts = "--import-mode=importlib"

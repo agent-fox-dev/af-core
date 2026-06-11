@@ -24,9 +24,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-afspec = { path = "../afspec", editable = true }
+afspec = { workspace = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-import_mode = "importlib"
+addopts = "--import-mode=importlib"

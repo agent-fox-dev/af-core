@@ -6,6 +6,14 @@ resolution-markers = [
     "python_full_version < '3.15'",
 ]
 
+[manifest]
+members = [
+    "afspec",
+    "spec-cli",
+    "speclib",
+    "speclib-workspace",
+]
+
 [[package]]
 name = "afspec"
 version = "0.1.0"
@@ -14,6 +22,21 @@ dependencies = [
     { name = "jsonschema" },
     { name = "pydantic" },
     { name = "pyyaml" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "hypothesis" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "types-jsonschema" },
+    { name = "types-pyyaml" },
 ]
 
 [package.metadata]
@@ -955,6 +978,15 @@ dependencies = [
     { name = "speclib" },
 ]
 
+[package.optional-dependencies]
+dev = [
+    { name = "hypothesis" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1" },
@@ -976,6 +1008,16 @@ dependencies = [
     { name = "afspec" },
     { name = "anthropic", extra = ["bedrock", "vertex"] },
     { name = "pyyaml" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "hypothesis" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
+    { name = "types-pyyaml" },
 ]
 
 [package.metadata]

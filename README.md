@@ -2,6 +2,18 @@
 
 AI-powered spec creation tool for standalone authoring of spec packages.
 
+## Repository Structure
+
+This is a monorepo with three independent packages:
+
+| Package | Path | Description |
+|---------|------|-------------|
+| `afspec` | `packages/afspec/` | Spec-format library (models, validation, discovery) |
+| `speclib` | `packages/speclib/` | Core library (agent pipeline, sessions, campaigns) |
+| `spec-cli` | `packages/spec-cli/` | CLI tool providing the `spec` command |
+
+Dependency direction: `spec-cli` → `speclib` → `afspec`.
+
 ## Requirements
 
 - Python 3.14+
@@ -9,33 +21,49 @@ AI-powered spec creation tool for standalone authoring of spec packages.
 
 ## Installation
 
-Install speclib using uv from a local checkout:
+### All packages (development)
+
+Install all packages in editable mode from the repo root:
 
 ```bash
-uv pip install .
+uv sync
 ```
 
-Or from a git URL:
+### Individual packages
+
+Install just the CLI tool (pulls in `speclib` and `afspec` automatically):
 
 ```bash
-uv pip install git+https://github.com/your-org/speclib.git
+uv pip install ./packages/spec-cli
 ```
 
-For development (installs dev dependencies):
+Install just the library (no CLI dependencies):
 
 ```bash
-uv sync --extra dev
+uv pip install ./packages/speclib
+```
+
+Install just the spec-format library:
+
+```bash
+uv pip install ./packages/afspec
 ```
 
 ## Usage
 
 ```bash
-af-spec --help
+spec --help
+```
+
+Or use the library programmatically:
+
+```python
+from speclib import Campaign, SpecSession
 ```
 
 ## Development
 
-Run the full quality suite (linter + tests):
+Run the full quality suite (linter + tests) from the repo root:
 
 ```bash
 make check
@@ -51,6 +79,14 @@ Run the linter:
 
 ```bash
 make lint
+```
+
+Run tests for a single package:
+
+```bash
+cd packages/speclib && uv run pytest -q
+cd packages/spec-cli && uv run pytest -q
+cd packages/afspec && uv run pytest -q
 ```
 
 ## Configuration

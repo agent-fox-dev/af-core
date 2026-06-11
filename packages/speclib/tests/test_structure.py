@@ -88,13 +88,19 @@ def test_ts10_2_no_cli_dependencies() -> None:
 
 
 def test_ts10_14_afspec_path_dependency() -> None:
-    """TS-10-14: speclib declares afspec as a path dependency to ../afspec."""
+    """TS-10-14: speclib declares afspec as a workspace dependency.
+
+    In a uv workspace, member packages reference each other via
+    ``{ workspace = true }`` rather than direct path references.
+    The root pyproject.toml resolves the actual paths. See
+    ``docs/errata/10_workspace_dependency_syntax.md``.
+    """
     config = _load_speclib_pyproject()
     sources = config["tool"]["uv"]["sources"]
 
     assert "afspec" in sources, "afspec not in uv sources"
-    assert sources["afspec"]["path"] == "../afspec", (
-        f"afspec path should be ../afspec, got {sources['afspec'].get('path')}"
+    assert sources["afspec"].get("workspace") is True, (
+        f"afspec should be a workspace dependency, got {sources['afspec']}"
     )
 
 

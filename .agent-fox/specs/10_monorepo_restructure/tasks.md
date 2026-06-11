@@ -256,31 +256,31 @@ locations, import paths, and configuration files.
     - [x] Spec test TS-10-11 passes
     - [x] `make check` passes
 
-- [ ] 10. Remove old directories and update documentation
-  - [ ] 10.1 Remove old top-level directories
+- [x] 10. Remove old directories and update documentation
+  - [x] 10.1 Remove old top-level directories
     - Remove `speclib/` directory (should be empty after git mv)
     - Remove `tests/` directory (should be empty after git mv)
     - Verify no stray files remain
     - _Requirements: 10-REQ-6.1, 10-REQ-6.2_
 
-  - [ ] 10.2 Update CLAUDE.md and README.md
+  - [x] 10.2 Update CLAUDE.md and README.md
     - Update project structure description in CLAUDE.md
     - Update installation and usage instructions in README.md
     - Update test command references
     - _Requirements: documentation_
 
-  - [ ] 10.3 Run full verification
+  - [x] 10.3 Run full verification
     - Run `make check` from repo root
     - Run `uv run pytest` from `packages/speclib/` (isolation check)
     - Run `uv run pytest` from `packages/spec-cli/` (isolation check)
     - Run `uv run pytest` from `packages/afspec/` (isolation check)
     - Verify all existing tests still pass
 
-  - [ ] 10.V Verify task group 10
-    - [ ] Old `speclib/` and `tests/` directories removed
-    - [ ] Spec tests TS-10-12 pass
-    - [ ] All existing tests pass: `make check`
-    - [ ] `uv run pytest` works from each package directory
+  - [x] 10.V Verify task group 10
+    - [x] Old `speclib/` and `tests/` directories removed
+    - [x] Spec tests TS-10-12 pass
+    - [x] All existing tests pass: `make check`
+    - [x] `uv run pytest` works from each package directory
 
 - [ ] 11. Wiring verification
 

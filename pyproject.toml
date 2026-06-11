@@ -35,7 +35,10 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 
+[tool.uv.workspace]
+members = ["packages/*"]
+
 [tool.uv.sources]
-afspec = { path = "packages/afspec", editable = true }
-speclib = { path = "packages/speclib", editable = true }
-spec-cli = { path = "packages/spec-cli", editable = true }
+afspec = { workspace = true }
+speclib = { workspace = true }
+spec-cli = { workspace = true }

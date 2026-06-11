@@ -387,15 +387,18 @@ def test_ts10_e9_spec_cli_declares_speclib_path_dependency() -> None:
         "uv will not auto-install it"
     )
 
-    # 2. uv sources must point speclib to ../speclib
+    # 2. uv sources must declare speclib as a workspace dependency.
+    # In a uv workspace, member packages reference each other via
+    # { workspace = true } rather than direct path references.
+    # See docs/errata/10_workspace_dependency_syntax.md.
     sources = config.get("tool", {}).get("uv", {}).get("sources", {})
     assert "speclib" in sources, (
         "speclib not in spec-cli [tool.uv.sources] — "
-        "path dependency not declared"
+        "dependency not declared"
     )
-    assert sources["speclib"].get("path") == "../speclib", (
-        f"speclib path dependency should be ../speclib, "
-        f"got {sources['speclib'].get('path')!r}"
+    assert sources["speclib"].get("workspace") is True, (
+        f"speclib should be a workspace dependency, "
+        f"got {sources['speclib']!r}"
     )
 
 
