@@ -31,8 +31,8 @@ locations, import paths, and configuration files.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create test file for structural checks
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create test file for structural checks
     - Create `packages/speclib/tests/test_structure.py`
     - Create `packages/spec-cli/tests/test_structure.py`
     - Add tests for file existence (TS-10-1), pyproject.toml content
@@ -45,7 +45,7 @@ locations, import paths, and configuration files.
       automatic speclib install via spec-cli (TS-10-E9)
     - _Test Spec: TS-10-1 through TS-10-15, TS-10-E6, TS-10-E7, TS-10-E8, TS-10-E9_
 
-  - [ ] 1.2 Create test file for import/property tests
+  - [x] 1.2 Create test file for import/property tests
     - Create `packages/speclib/tests/test_import_isolation.py`
     - Add import independence test (TS-10-P1)
     - Add module placement uniqueness test (TS-10-P4)
@@ -53,22 +53,22 @@ locations, import paths, and configuration files.
     - Add patch target resolution test (TS-10-E10)
     - _Test Spec: TS-10-P1, TS-10-P4, TS-10-E3, TS-10-E10_
 
-  - [ ] 1.3 Create test file for CLI tests
+  - [x] 1.3 Create test file for CLI tests
     - Create `packages/spec-cli/tests/test_cli_equivalence.py`
     - Add CLI help name test (TS-10-E2)
     - Add CLI subcommand help test (TS-10-P3)
     - _Test Spec: TS-10-P3, TS-10-E2_
 
-  - [ ] 1.4 Create integration smoke test file
+  - [x] 1.4 Create integration smoke test file
     - Create `packages/spec-cli/tests/test_smoke.py`
     - Add `spec new` end-to-end test (TS-10-SMOKE-1)
     - Add library-only usage test (TS-10-SMOKE-2)
     - _Test Spec: TS-10-SMOKE-1, TS-10-SMOKE-2_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check`
 
 - [ ] 2. Create speclib library package
   - [ ] 2.1 Create `packages/speclib/` directory structure
