@@ -54,7 +54,7 @@ The hub is the coordination service. It owns:
   activity log.
 - **Spec lifecycle.** Enforces the state machine (`draft → active → sealed /
   superseded`), intent hashing, and the freeze contract.
-- **Run management.** Creates and tracks runs (spec-driven and Ralph).
+- **Run management.** Creates and tracks spec-driven runs.
   Manages the Coordinator pattern: delegates subtasks, monitors state,
   triggers verification, applies bounce-backs.
 - **Prompt assembly.** Composes the system prompt for each agent from the
@@ -168,7 +168,6 @@ af context detach <workspace-id> <context-id>
 
 af run start <workspace-id>
 af run start-planner <workspace-id>
-af run start-ralph <workspace-id> --goal <text> --verifier <command>
 af run list <workspace-id>
 af run get <run-id>
 af run stop <run-id>
@@ -753,7 +752,6 @@ Configuration and data are stored in separate directory trees.
     coordinator/
     implementor/
     verifier/
-    ralph/
   # Worktrees live near the repo, not here — see runtime-layer.md §3.2
   # Location: <repo-parent>/.af_worktrees/<workspace-id>/
 ```
@@ -775,8 +773,7 @@ The operational store tables map directly to the entities in
   schema_version, supersedes, created_at, updated_at
 - `context_attachments` — workspace_id, context_id, pinned_revision,
   pin_mode, attached_at
-- `runs` — id, workspace_id, spec_id, kind, status, circuit_breaker_state
-  (JSON), started_at, ended_at
+- `runs` — id, workspace_id, spec_id, kind, status, started_at, ended_at
 - `agents` — id, workspace_id, run_id, specialist_role, actor_capability,
   provider, model, phase, activity, parent_agent_id, started_at, ended_at
 - `subtask_executions` — workspace_id, spec_id, subtask_id, run_id,
@@ -890,7 +887,7 @@ translated to protobuf.
 
 ## 10. Security and isolation
 
-### 9.1 Agent identity
+### 10.1 Agent identity
 
 Each agent receives a short-lived JWT at container creation. The token
 encodes:
@@ -908,14 +905,14 @@ capability model (see
 [coordination-layer.md §6.4](coordination-layer.md#64-specialists-actor-capabilities-and-instruction-precedence))
 at the bridge boundary.
 
-### 9.2 Container isolation
+### 10.2 Container isolation
 
 Detailed in [runtime-layer.md](runtime-layer.md). The key guarantee: an
 agent container sees only its mounted worktree, its agent home directory,
 and the MCP bridge socket. It cannot see the af database, other agents'
 homes, or the spec store on the host filesystem.
 
-### 9.3 Hub access
+### 10.3 Hub access
 
 The CLI socket is file-permission-protected (owner-only). The bridge port
 is localhost-only by default. No authentication is needed for the CLI socket
@@ -925,13 +922,13 @@ is localhost-only by default. No authentication is needed for the CLI socket
 
 ## 11. Deployment modes
 
-### 10.1 Local (default)
+### 11.1 Local (default)
 
 Everything on one machine. Podman for containers. SQLite for
 storage. Embedded memory service. The Operator runs `af hub start` and
 uses the CLI.
 
-### 10.2 Future: remote hub
+### 11.2 Future: remote hub
 
 The hub runs on a remote machine (a beefy server, a cloud VM). The CLI
 connects over TCP instead of a Unix socket. The bridge port is exposed on the
@@ -939,7 +936,7 @@ network with TLS. Agent containers run on the same remote machine. This
 requires adding TLS and Operator authentication to the hub — the gRPC and
 HTTP interfaces already support it structurally.
 
-### 10.3 Future: distributed
+### 11.3 Future: distributed
 
 Multiple machines each running a hub instance, coordinated by a central
 registry (analogous to Scion's Hub). Out of scope for this document.
@@ -948,7 +945,7 @@ registry (analogous to Scion's Hub). Out of scope for this document.
 
 ## 12. Context retrieval engine
 
-### 11.1 Purpose
+### 12.1 Purpose
 
 The coordination layer defines two resolution strategies for Context sources
 (see [coordination-layer.md §5.9](coordination-layer.md#59-grounding-the-context)):
@@ -957,7 +954,7 @@ only relevant chunks pulled in per turn). Pinned sources work for small
 documents but cannot scale to a full repository or a large document set.
 The retrieval engine makes `retrieved` sources practical.
 
-### 11.2 Interface
+### 12.2 Interface
 
 The hub calls the retrieval engine when an agent invokes the Context
 search tool and the target source has resolution strategy `retrieved`.
@@ -1004,7 +1001,7 @@ type RetrievalResult = {
 }
 ```
 
-### 11.3 Deployment
+### 12.3 Deployment
 
 **Embedded (default).** The engine runs in-process within the hub.
 Embeddings are computed using a local model (e.g. a small ONNX embedding
@@ -1017,7 +1014,7 @@ gRPC, using the same interface. This mode supports GPU-accelerated
 embeddings, larger indices, and shared retrieval across multiple hub
 instances.
 
-### 11.4 Indexing lifecycle
+### 12.4 Indexing lifecycle
 
 - When a Context revision is cut: the hub calls `index()` for each
   `retrieved` source in the revision.
@@ -1029,7 +1026,7 @@ instances.
   pins it.
 - When a source is removed from a Context: `remove()` on all revisions.
 
-### 11.5 Storage
+### 12.5 Storage
 
 Embedded mode adds to the hub's storage:
 
@@ -1046,23 +1043,23 @@ maintained over the embeddings for search.
 
 ## 13. CI/CD bridge
 
-### 12.1 Purpose
+### 13.1 Purpose
 
 The harness reads CI status and drives PRs but does not run pipelines itself.
 The CI/CD bridge is the read-only adapter that lets agents query pipeline
 status so the Verifier can confirm CI passed as part of the wiring
 verification gate (see
-[coordination-layer.md §7.5](coordination-layer.md#75-verification-gate))
+[coordination-layer.md §7.4](coordination-layer.md#74-verification-gate))
 and the PR Shepherd can wait for green CI before marking a PR merge-ready.
 
-### 12.2 Interface
+### 13.2 Interface
 
 Defined in the coordination layer (see
 [coordination-layer.md §6.5](coordination-layer.md#65-tools-available-to-agents)).
 The `CIProvider` interface is pluggable, the same pattern as `IssueTracker`
 and `WebSearch`.
 
-### 12.3 Adapters
+### 13.3 Adapters
 
 **GitHub Actions adapter.** Uses the GitHub REST API
 (`GET /repos/{owner}/{repo}/actions/runs`, `GET .../jobs`,
@@ -1075,7 +1072,7 @@ Authenticates with a GitLab access token.
 
 Adding a new CI provider means implementing the `CIProvider` interface.
 
-### 12.4 Configuration
+### 13.4 Configuration
 
 ```yaml
 # Per-workspace or global
@@ -1086,7 +1083,7 @@ ci:
   # for the common case where CI runs on the same platform as the repo.
 ```
 
-### 12.5 Agent access
+### 13.5 Agent access
 
 The CI/CD bridge is exposed to agents through the af MCP bridge as the
 `af_ci_status` tool. Queries and results are logged as activity events.
@@ -1097,14 +1094,14 @@ configuration.
 
 ## 14. Notification service
 
-### 13.1 Purpose
+### 14.1 Purpose
 
 The Operator is not always watching the terminal. The notification service
 alerts the Operator when events of interest occur, so they can step in at
-the right moments (approve a drafted spec, review a completed run, handle a
-circuit breaker).
+the right moments (approve a drafted spec, review a completed run, handle
+a failure).
 
-### 13.2 Interface
+### 14.2 Interface
 
 The notification service subscribes to the hub's activity event stream
 and matches events against a set of triggers. When a trigger fires, it
@@ -1145,7 +1142,7 @@ type Notification = {
 }
 ```
 
-### 13.3 Built-in channels
+### 14.3 Built-in channels
 
 **Desktop notification.** Uses the OS notification system (macOS
 Notification Center, Linux `notify-send`). Zero configuration for local
@@ -1158,27 +1155,25 @@ webhooks, PagerDuty, or a custom endpoint.
 **Log.** Writes notifications to a file or stdout. Useful for headless
 servers or CI environments where no interactive notification is possible.
 
-### 13.4 Default triggers
+### 14.4 Default triggers
 
 | Trigger | Priority | When |
 | --- | --- | --- |
 | `spec_ready_for_review` | action_required | A Planner has drafted a spec ready for Operator approval. |
 | `run_complete` | info | A spec-driven run completed successfully. |
 | `run_failed` | action_required | A run stopped due to error or unrecoverable failure. |
-| `ralph_complete` | info | A Ralph loop exited cleanly (verifier passed). |
-| `ralph_stopped` | action_required | A Ralph loop hit a circuit breaker. |
 | `campaign_workspace_unblocked` | action_required | A Campaign dependency gate cleared. |
 | `verification_failed` | info | A verification gate failed; the Coordinator will re-delegate. |
 | `agent_stalled` | info | An agent has been stalled beyond the configured threshold. |
 
 The Operator can add, remove, or modify triggers through configuration.
 
-### 13.5 Deployment
+### 14.5 Deployment
 
 The notification service runs inside the hub process as an event
 subscriber — not a separate service.
 
-### 13.6 Configuration
+### 14.6 Configuration
 
 ```yaml
 # ~/.af/settings.yaml
@@ -1201,14 +1196,14 @@ notifications:
 
 ## 15. Web dashboard
 
-### 14.1 Purpose
+### 15.1 Purpose
 
 A read-only web frontend for observing system state without the CLI. Shows
 what's happening across workspaces, runs, agents, and Campaigns at a glance.
 The Operator uses it alongside the CLI, not instead of it — all write
 operations remain CLI-driven.
 
-### 14.2 Architecture
+### 15.2 Architecture
 
 The dashboard is a static single-page application (SPA) served by the hub
 over its HTTP interface. It consumes the same Operator-facing API and
@@ -1219,7 +1214,7 @@ Browser ──► Hub HTTP ──► Same API endpoints as CLI
                      └──► SSE streams for live updates
 ```
 
-### 14.3 Views
+### 15.3 Views
 
 | View | Content |
 | --- | --- |
@@ -1231,19 +1226,19 @@ Browser ──► Hub HTTP ──► Same API endpoints as CLI
 | **Agent detail** | State, conversation history, tool call log, assigned subtask. |
 | **Campaign graph** | Dependency graph across specs. Node color by status. |
 
-### 14.4 Live updates
+### 15.4 Live updates
 
 The dashboard subscribes to the hub's SSE activity stream for real-time
 updates. Workspace status changes, subtask transitions, verification
 outcomes, and agent state changes appear without polling.
 
-### 14.5 Deployment
+### 15.5 Deployment
 
 The hub serves the dashboard's static assets from a built-in directory.
 No separate web server. Available at
 `http://localhost:<hub-http-port>/` when the hub is running.
 
-### 14.6 Scope boundary
+### 15.6 Scope boundary
 
 The dashboard is read-only. It does not provide forms for creating
 workspaces, authoring specs, or starting runs. If write support is added

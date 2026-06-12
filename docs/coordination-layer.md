@@ -189,7 +189,7 @@ Every spec belongs to a campaign. A Campaign is the organizational unit that gro
 
 ### 4.1 What a Campaign is
 
-A Campaign is a named container that owns a set of specs, a dependency graph across them, a goal document, and orchestration state. It sits above the workspace: a Campaign references workspaces, it does not own their internals. Every spec is stored under its parent campaign in the spec store (see [services-architecture.md §7.1](services-architecture.md#81-filesystem-layout)).
+A Campaign is a named container that owns a set of specs, a dependency graph across them, a goal document, and orchestration state. It sits above the workspace: a Campaign references workspaces, it does not own their internals. Every spec is stored under its parent campaign in the spec store (see [services-architecture.md §8.1](services-architecture.md#81-filesystem-layout)).
 
 A Campaign does not decompose the goal upfront. Spec authoring happens one spec at a time (see §5). The human registers specs into the campaign incrementally — start with spec 01, see what it reveals, register spec 02 with a declared dependency on spec 01.
 
@@ -475,7 +475,6 @@ A specialist is a role: a system prompt, a tool policy, a model tier, and a beha
 | Implementor | Archetype        | Implements one assigned subtask; transitions only that subtask's state. |
 | Verifier    | Archetype        | Runs verification checks and wiring verification; reports pass or fail. |
 | UI Designer | Archetype        | Builds and visually checks interfaces for assigned subtasks. |
-| Ralph       | n/a              | Runs an autonomous loop outside the spec package. Uses harness infrastructure but bypasses spec authoring and the actor capability model. |
 | PR Reviewer | Archetype        | Reviews a pull request and gives feedback. |
 | PR Shepherd | Archetype        | Drives a PR to merge-ready. |
 
@@ -601,30 +600,6 @@ type Learning = { content: string; provenance: string; kind?: "episodic" | "sema
 
 `recall` pins a revision at run start. `consolidate` runs once at session end, advancing the revision. Memory grows between runs, never during one.
 
-### 6.7 Ralph: the autonomous loop
-
-Ralph is a distinct operating mode for tasks where the goal is clear but the path is not. Rather than a Planner producing a validated spec, Ralph runs a tight agent loop against a goal statement and a verifier, iterating until the verifier passes or a circuit breaker fires. It uses the full harness infrastructure (workspace, worktree, Contexts, tools, activity log) but operates entirely outside the spec package.
-
-**Input:**
-
-- *Goal* — a free-text statement of what success looks like.
-- *Verifier* — a machine-checkable exit condition: a shell command whose exit code determines pass or fail. Required.
-- *Contexts* — attached Contexts, pinned at run start. Optional but recommended.
-
-**The loop.** Each iteration: assemble the prompt from the goal, the verifier result from the previous iteration, the attached Contexts, and the conversation history; run one agent turn; execute tool calls; run the verifier; check circuit breakers; repeat.
-
-**Done.** The loop exits cleanly when the verifier passes. Ralph commits, records a `loop_complete` event, and signals ready for review.
-
-**Circuit breakers.** All three are always active; the first to fire wins:
-
-| Breaker | What it guards against | Default |
-| --- | --- | --- |
-| `max_tokens` | Runaway model spending | 2,000,000 tokens |
-| `max_iterations` | Tight loop with no progress | 30 iterations |
-| `max_duration` | Slow crawl tying up a workspace | 4 hours |
-
-When a breaker fires, Ralph commits partial progress, records a `loop_stopped` event, and stops. The branch is left open for review or manual continuation. No rollback.
-
 ---
 
 ## 7. Orchestration
@@ -739,19 +714,6 @@ Supersession is the modeled escape when the frozen plan is wrong.
 
 The workspace stays `Active`. The Operator authors a corrective spec (via `spec` or the Planner), then creates a new workspace referencing it on the same branch, so partial commits carry forward.
 
-### 8.4 The Ralph flow
-
-Ralph replaces phases 3-7 with a goal-and-verifier loop. Phases 1, 2, and 8 are identical.
-
-| Phase | Who acts | What happens |
-| --- | --- | --- |
-| **1. Provision** | Operator | Same as the generic flow. |
-| **2. Bootstrap** | Harness | Same. |
-| **3-7. Loop** | Ralph | Iterates: prompt → agent turn → tool calls → verifier → circuit breakers. On pass: commit and signal ready. On breaker: commit partial progress and stop. |
-| **8. Close** | Operator | Reviews the branch, merges, archives. |
-
-No spec is authored, frozen, or sealed. The deliverable is a branch.
-
 ---
 
 ## 9. Data model and persistence
@@ -797,10 +759,10 @@ The harness persists state across three stores so a process restart resumes clea
 
 | Entity | Key fields | Notes |
 | --- | --- | --- |
-| Run | id, workspace id, spec_id, kind, status, circuit breaker state, timestamps | The unit of execution. A spec-driven run covers phases 5-6; a Ralph run covers the loop. |
+| Run | id, workspace id, spec_id, kind, status, timestamps | The unit of execution. A spec-driven run covers phases 3-5. |
 | Agent | id, workspace id, run id, specialist role, actor capability, provider, model, phase, activity, parent agent id, timestamps | Phase tracks the container lifecycle; activity tracks what the agent is doing within `running`. See [runtime-layer.md §5](runtime-layer.md#5-agent-lifecycle). |
 | SubtaskExecution | workspace id, spec_id, subtask id, run id, assigned agent id, state, drop rationale, timestamps | The live execution state. Transitions are harness-enforced (§5.6). |
-| VerificationOutcome | workspace id, spec_id, run id, group id, verification subtask id, check id, result, detail, recorded_at | One row per check. The Verifier reports; the harness records and transitions accordingly (§7.5). |
+| VerificationOutcome | workspace id, spec_id, run id, group id, verification subtask id, check id, result, detail, recorded_at | One row per check. The Verifier reports; the harness records and transitions accordingly (§7.4). |
 | ManagedScript | workspace id, agent id, run id, command, pid, status, timestamps | Long-running process tracked for cleanup. |
 
 **Conversation layer.**
@@ -814,7 +776,7 @@ The harness persists state across three stores so a process restart resumes clea
 | Entity | Key fields | Notes |
 | --- | --- | --- |
 | MemoryPin | workspace id, run id, memory scope, pinned revision, recorded_at | Records which memory revision a run read. |
-| ActivityEvent | id, workspace id, run id, agent id, type, payload, timestamp | Append-only event stream. Types: `text`, `thinking`, `tool_call`, `tool_result`, `spec_patch`, `context_pin`, `memory_pin`, `commit`, `status_change`, `verification_outcome`, `loop_iteration`, `loop_complete`, `loop_stopped`, `script_start`, `script_stop`. |
+| ActivityEvent | id, workspace id, run id, agent id, type, payload, timestamp | Append-only event stream. Types: `text`, `thinking`, `tool_call`, `tool_result`, `spec_patch`, `context_pin`, `memory_pin`, `commit`, `status_change`, `verification_outcome`, `script_start`, `script_stop`. |
 
 ### 9.4 Persistence and recovery
 
@@ -870,7 +832,6 @@ The API is split by audience. **Operator-facing** operations are for the human c
 **Runs.**
 
 - Start spec-driven: supply workspace and spec. The harness creates a Run, pins revisions, starts the Coordinator.
-- Start Ralph: supply workspace, goal, verifier, optional circuit breaker overrides. The harness creates a Run and starts the loop.
 - Get status; list runs.
 - Stop a run (stops agents, commits partial work).
 
@@ -917,7 +878,7 @@ Read-only; available to both the Operator and diagnostic tooling.
 
 - **Activity stream.** Subscribe to or page through `ActivityEvent` (see §9.3 for event types). Filterable by workspace, run, agent, event type, time range.
 - **Grounding read (debug).** Fetch the full prompt assembled for a given turn, including spec slice, Context content, recalled memory, and composed instructions. Fetch pinned Context and memory revisions for a run.
-- **Run history.** Completed runs with status, duration, circuit breaker state, and summary.
+- **Run history.** Completed runs with status, duration, and summary.
 
 ---
 
@@ -972,7 +933,6 @@ The af MCP bridge is the integration point between the two layers: it runs as a 
 | Resolution strategy | `pinned` (full content in prompt every turn) or `retrieved` (indexed, pulled in per turn). |
 | Freshness contract | `snapshot` (fixed at a revision) or `live` (re-resolves on origin change). |
 | Pinned revision | The Context revision a workspace is fixed to for its runs. |
-| Ralph | Autonomous loop specialist outside the spec package. Goal + verifier + circuit breakers. |
 | Planner | Harness specialist that drafts JSON artifacts from PRD input during `draft`, using speclib. The harness-mediated path for spec authoring. |
 | speclib | The shared library for spec creation, validation, and rendering. Used by `spec`, the Planner, and the harness. See [services-architecture.md §7](services-architecture.md#7-the-spec-creation-tool). |
 | spec | Standalone CLI for spec authoring. Wraps speclib. Works without the hub. See [services-architecture.md §7](services-architecture.md#7-the-spec-creation-tool). |

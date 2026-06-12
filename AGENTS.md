@@ -16,7 +16,9 @@ Before making any changes, orient yourself:
    unit, property, and integration tests. Their location is language dependent.
 6. **Check git state:** `git log --oneline -20`, `git status --short --branch`.
 7. **Run `make check`** to confirm the baseline is green. If tests fail, fix
-   them before starting new work.
+   them before starting new work. **Exception:** if the session changes only
+   documentation under `docs/` or `.agent-fox/specs/`, skip this step unless the
+   user asks you to run tests.
 
 **Important:** Read all documents and code in depth — don't skim.
 
@@ -65,11 +67,15 @@ This project uses spec-driven development. Specifications live in
 | `make check` | Run lint + all tests (use before committing) |
 | `make test` | Run all tests (`uv run pytest -q`) |
 
-Run the full quality suite before committing:
+Run the full quality suite before committing code changes:
 
 ```
 make check
 ```
+
+**Documentation-only sessions:** when your changes are limited to `docs/` or
+`.agent-fox/specs/` (no source, config, or test edits), you do not need to run
+`make check` or `make test` unless the user explicitly asks.
 
 ## Git Workflow
 
@@ -105,7 +111,9 @@ make check
 
 A session is not complete until:
 
-1. `make check` or `make test` passes (no regressions).
+1. `make check` or `make test` passes (no regressions) — **unless** the session
+   touched only `docs/` or `.agent-fox/specs/`, in which case skip this step
+   unless the user asked for tests.
 2. Changes are committed with a clear conventional commit message.
 3. Changes are merged into `develop` locally.
 4. `git status` shows a clean working tree.

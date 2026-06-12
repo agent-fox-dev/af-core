@@ -413,7 +413,6 @@ The runtime ships default templates for each specialist role:
 | `coordinator` | configurable | Delegates subtasks, monitors execution. |
 | `implementor` | configurable | Implements one subtask. |
 | `verifier` | configurable | Runs verification checks. |
-| `ralph` | configurable | Autonomous goal+verifier loop. |
 
 Each template includes the af MCP bridge as a sidecar service and
 pre-configures the MCP server declaration so the harness discovers it.

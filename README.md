@@ -76,9 +76,8 @@ layer references it for format details and builds harness-specific policies
 | **speclib / spec** | The standalone spec creation tool. speclib is the shared library; `spec` is the CLI wrapper. Creates, validates, renders, and manages spec packages on the filesystem — no hub required. Also available as an agent skill. |
 | **Context** | A durable, reusable bundle of grounding: one instruction plus typed sources (files, repos, MCP servers, skills, rules). Read-only to agents; owned by the Operator. |
 | **Agent** | A running model instance backed by an external provider, with a specialist role and scoped tools, executing inside a workspace. |
-| **Specialist** | A named agent role (Planner, Coordinator, Implementor, Verifier, Ralph, etc.) carrying a system prompt, tool policy, model tier, and actor capability. |
+| **Specialist** | A named agent role (Planner, Coordinator, Implementor, Verifier, etc.) carrying a system prompt, tool policy, model tier, and actor capability. |
 | **Provider** | An external agent backend (Claude Code, Gemini CLI, Codex, OpenCode) the harness drives through a uniform adapter interface. |
 | **Coordinator pattern** | Agents coordinate through a shared store (the frozen spec + the operational store), not by messaging each other. The Coordinator delegates subtasks; workers write only their own execution state. |
-| **Ralph** | An autonomous loop specialist for tasks where the goal is clear but the path is not. Iterates against a verifier command; operates outside the spec package entirely. |
 | **af hub** | The single stateful host process: owns all three stores, manages runs, enforces the spec lifecycle, serves the coordination API, and receives MCP bridge connections. |
 | **af MCP bridge** | A sidecar MCP server inside each agent container that exposes harness tools (spec read, Context search, memory recall, subtask state, file claims) to the provider. |
