@@ -14,7 +14,7 @@ agent lifecycle) is specified in [runtime-layer.md](runtime-layer.md). The
 services architecture (hub, CLI, storage, protocols, deployment) is
 specified in [services-architecture.md](services-architecture.md). The spec
 format itself is an independent standard at
-[spec-format_v1.2.md](../spec-format_v1.2.md); this document covers what the
+[spec-format_v1.2.md](spec-format_v1.2.md); this document covers what the
 harness builds on top of it.
 
 ---
@@ -84,7 +84,7 @@ graph TD
 | --- | --- |
 | Workspace | Isolated environment for one task: a worktree, a spec package, attached Contexts, agents, and an activity log. |
 | Worktree | A git working tree on a dedicated branch, giving each workspace its own files. |
-| Spec package | The validated set of four required artifacts (and one optional) that define and verify the work. Format details in [spec-format_v1.2.md](../spec-format_v1.2.md). |
+| Spec package | The validated set of four required artifacts (and one optional) that define and verify the work. Format details in [spec-format_v1.2.md](spec-format_v1.2.md). |
 | PRD (`prd.md`) | The human-authored narrative: intent, goals, non-goals, background, plus machine-read frontmatter and a hashed Intent section. |
 | Requirements (`requirements.json`) | EARS acceptance criteria, correctness properties, execution paths, and error handling. |
 | Test spec (`test_spec.json`) | A language-agnostic test contract derived from the requirements, with computed coverage. |
@@ -217,13 +217,13 @@ This is lighter than a spec PRD: no Intent hash, no schema validation, no freeze
 
 ### 4.3 The dependency graph
 
-Dependencies between specs in a campaign are declared inside each spec's `tasks.json`, using the `dependencies` array with `depends_on_spec`, `from_group`, and `to_group` fields (see [spec-format_v1.2.md §8.2](../spec-format_v1.2.md#82-dependencies)). Edges are authored as part of the spec, not stored separately in the campaign.
+Dependencies between specs in a campaign are declared inside each spec's `tasks.json`, using the `dependencies` array with `depends_on_spec`, `from_group`, and `to_group` fields (see [spec-format_v1.2.md §8.2](spec-format_v1.2.md#82-dependencies)). Edges are authored as part of the spec, not stored separately in the campaign.
 
 An edge reads: "spec B's workspace may not activate until spec A's task group N is complete." "Complete" means the group's verification subtask `{N}.V` has passed.
 
 Specs with no declared dependencies are ready immediately. Specs with dependencies stay blocked until their upstream groups clear. Independent specs may run in parallel.
 
-The hub evaluates the dependency graph at execution time by reading each spec's `tasks.json` dependencies. Because a downstream spec is often authored before its upstream is fully planned, `from_group: 0` serves as a sentinel for "upstream not yet planned" (see [spec-format_v1.2.md §8.2](../spec-format_v1.2.md#82-dependencies)).
+The hub evaluates the dependency graph at execution time by reading each spec's `tasks.json` dependencies. Because a downstream spec is often authored before its upstream is fully planned, `from_group: 0` serves as a sentinel for "upstream not yet planned" (see [spec-format_v1.2.md §8.2](spec-format_v1.2.md#82-dependencies)).
 
 **Sentinel handling at runtime.** When the hub encounters a `from_group: 0` edge, it treats the entire upstream spec as the dependency — the downstream workspace's bootstrap is deferred until the upstream spec is `sealed` (all task groups complete). Once the upstream spec's `tasks.json` exists with concrete groups, the sentinel resolves to the actual group but remains a whole-spec gate until the edge is updated. An unresolved sentinel never silently passes; the workspace stays in `Created` until the gate clears.
 
@@ -255,7 +255,7 @@ A Campaign is not a spec (no `requirements.json`, no freeze, no traceability). I
 
 The coordination layer is a validated package of artifacts, not a single prose
 note. The format reference is the **Spec Format Specification** at
-[spec-format_v1.2.md](../spec-format_v1.2.md); that document is the authority
+[spec-format_v1.2.md](spec-format_v1.2.md); that document is the authority
 on artifact structure, field-level schemas, EARS patterns, ID formats,
 validation rules, and rendering. Where this document and the format spec
 disagree on structure or field semantics, the format spec wins; where the
@@ -275,7 +275,7 @@ The spec separates four concerns:
 
 Architectural detail has an explicit, optional home in `architecture.md`. The harness treats the package as a unit: a workspace's spec is valid only when all four required artifacts are present and consistent.
 
-For artifact structure, field definitions, and schema details, see [spec-format_v1.2.md §4-8](../spec-format_v1.2.md).
+For artifact structure, field definitions, and schema details, see [spec-format_v1.2.md §4-8](spec-format_v1.2.md).
 
 ### 5.2 Identity, completeness, and bootstrap
 
@@ -283,7 +283,7 @@ Specs are stored in the spec store on the filesystem, organized under their pare
 
 Spec creation is handled by **speclib**, a shared library used by both the standalone `spec` CLI and the harness Planner. During creation speclib operates in bootstrap mode, writing the four artifacts sequentially and deferring cross-artifact validation until all four exist. See [services-architecture.md §7](services-architecture.md#7-the-spec-creation-tool) for the full spec creation tool description.
 
-A spec cannot move from `draft` to `active` while incomplete. See [spec-format_v1.2.md §3](../spec-format_v1.2.md#3-folder-layout-and-naming) for naming and completeness rules.
+A spec cannot move from `draft` to `active` while incomplete. See [spec-format_v1.2.md §3](spec-format_v1.2.md#3-folder-layout-and-naming) for naming and completeness rules.
 
 ### 5.3 Spec lifecycle and intent protection
 
@@ -297,7 +297,7 @@ The spec carries its own lifecycle in `prd.md` frontmatter, separate from the wo
 | `superseded` | Replaced by another spec; moved to archive | None; deprecation banner applied |
 | `archived` | Complete and put away; moved to archive | None |
 
-Both `superseded` and `archived` are terminal. A `superseded` spec was replaced; an `archived` spec completed normally. See [spec-format_v1.2.md §9](../spec-format_v1.2.md#9-lifecycle) for full lifecycle and transition details.
+Both `superseded` and `archived` are terminal. A `superseded` spec was replaced; an `archived` spec completed normally. See [spec-format_v1.2.md §9](spec-format_v1.2.md#9-lifecycle) for full lifecycle and transition details.
 
 At the `draft` to `active` transition the harness computes `intent_hash`:
 
@@ -365,7 +365,7 @@ Structural rules the harness enforces through schema validation:
 - `"checkpoint"` and `"standard"` groups may appear between.
 - Each group carries exactly one verification subtask `{group}.V`.
 
-For detailed task group structure, subtask fields, verification subtask format, wiring verification requirements, and traceability, see [spec-format_v1.2.md §8](../spec-format_v1.2.md#8-tasksjson).
+For detailed task group structure, subtask fields, verification subtask format, wiring verification requirements, and traceability, see [spec-format_v1.2.md §8](spec-format_v1.2.md#8-tasksjson).
 
 Subtask state is a fixed machine:
 
@@ -394,13 +394,13 @@ Validation is implemented in **speclib** and shared by the `spec` CLI, the harne
 
 A mutation that breaks integrity is rejected during drafting, so an inconsistent spec cannot be approved. speclib also exposes a standalone `validate()` for CI and pre-commit hooks.
 
-For the full list of validation rules, see [spec-format_v1.2.md §10](../spec-format_v1.2.md#10-validation).
+For the full list of validation rules, see [spec-format_v1.2.md §10](spec-format_v1.2.md#10-validation).
 
 speclib eases the path to a clean commit with a **repair pass**: a required field with an inferable value, EARS field names that map cleanly to the declared pattern, or an ID one transform from valid are auto-corrected and logged. Hard rejection is reserved for semantic failures that need a human or agent decision. Repair suggestions are recorded in the activity log (when running through the harness) or to stderr (when running standalone via `spec`).
 
 ### 5.8 Rendering
 
-The harness provides a deterministic renderer: same JSON in produces same markdown out, byte for byte. It offers per-file rendering and a combined view (PRD, then `architecture.md` if present, then requirements, test spec, and tasks). See [spec-format_v1.2.md §11](../spec-format_v1.2.md#11-rendering).
+The harness provides a deterministic renderer: same JSON in produces same markdown out, byte for byte. It offers per-file rendering and a combined view (PRD, then `architecture.md` if present, then requirements, test spec, and tasks). See [spec-format_v1.2.md §11](spec-format_v1.2.md#11-rendering).
 
 ### 5.9 Grounding: the Context
 
@@ -673,7 +673,7 @@ Grounding sits outside this loop. Contexts are read-only and pinned, so groundin
 
 The agent transitions its subtask state as it progresses, ending at `awaiting_verification`. The harness moves it to `done` after verification passes or to `pending_reevaluation` on failure.
 
-The `awaiting_verification` state is a harness extension not present in the format spec's state machine (see [spec-format_v1.2.md §8.3.1](../spec-format_v1.2.md#831-subtask)). The format spec defines `in_progress → done`; the harness inserts `awaiting_verification` between them to gate completion on verification. This is a stricter operating policy, the same pattern as the freeze in §5.4.
+The `awaiting_verification` state is a harness extension not present in the format spec's state machine (see [spec-format_v1.2.md §8.3.1](spec-format_v1.2.md#831-subtask)). The format spec defines `in_progress → done`; the harness inserts `awaiting_verification` between them to gate completion on verification. This is a stricter operating policy, the same pattern as the freeze in §5.4.
 
 ### 7.4 Verification gate
 
@@ -960,7 +960,7 @@ The af MCP bridge is the integration point between the two layers: it runs as a 
 | --- | --- |
 | Campaign | The organizational unit for specs. Every spec belongs to a campaign. Owns a goal document, workspaces, a dependency graph, and orchestration state. Also the top-level directory in the spec store filesystem. |
 | Worktree | Git working tree on the workspace's dedicated branch. |
-| Spec package | The validated four-artifact set (plus optional `architecture.md`). Format details in [spec-format_v1.2.md](../spec-format_v1.2.md). |
+| Spec package | The validated four-artifact set (plus optional `architecture.md`). Format details in [spec-format_v1.2.md](spec-format_v1.2.md). |
 | PRD | `prd.md`: human-authored intent, goals, non-goals, with hashed Intent and frontmatter. |
 | Requirements | `requirements.json`: EARS criteria, correctness properties, execution paths, error handling. |
 | Test spec | `test_spec.json`: language-agnostic test contract with computed coverage. |

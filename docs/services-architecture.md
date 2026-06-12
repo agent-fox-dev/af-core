@@ -336,7 +336,7 @@ spec store. Once a spec is complete, the user pushes it to the hub via
 ### 7.1 speclib
 
 The core Python library. Implements the
-[Spec Format Specification](../spec-format_v1.2.md) and drives spec
+[Spec Format Specification](spec-format_v1.2.md) and drives spec
 authoring through the Claude Agent SDK. speclib is used by:
 
 - the `spec` CLI (standalone authoring),
@@ -554,16 +554,16 @@ use the Agent SDK. These are deterministic operations implemented directly
 in Python:
 
 - **Validate** — JSON Schema validation per artifact, then cross-file
-  integrity checks. See [spec-format_v1.2.md §10](../spec-format_v1.2.md#10-validation).
+  integrity checks. See [spec-format_v1.2.md §10](spec-format_v1.2.md#10-validation).
 - **Render** — deterministic markdown output from JSON artifacts.
-  See [spec-format_v1.2.md §11](../spec-format_v1.2.md#11-rendering).
+  See [spec-format_v1.2.md §11](spec-format_v1.2.md#11-rendering).
 - **Repair** — auto-fix near-miss structural errors (empty required fields
   with inferable values, EARS field name mismatches, IDs one transform from
   valid). Returns `RepairSuggestion` objects: auto-fixable repairs are
   applied silently and logged; non-obvious repairs are surfaced for user
   review.
 - **Lifecycle** — enforce the state machine defined in
-  [spec-format_v1.2.md §9](../spec-format_v1.2.md#9-lifecycle). The
+  [spec-format_v1.2.md §9](spec-format_v1.2.md#9-lifecycle). The
   `draft → active` transition (Intent hashing, freeze) is performed by
   the hub, not by speclib standalone (see §7.4).
 
