@@ -1,0 +1,11 @@
+{
+  "answers": {
+    "q1": "Just a starter service to get the ball rolling.",
+    "q2": "Only /healthz and /readyz",
+    "q3": "Logger, Recovery, CORS",
+    "q4": "No business logic beyond ping",
+    "q5": "Greenfield \u2014 no prior scaffold exists",
+    "q6": "github.com/agent-fox-dev/srv-skafolding on go 1.25+",
+    "q7": "No, keep it as simple as possible for now."
+  }
+}

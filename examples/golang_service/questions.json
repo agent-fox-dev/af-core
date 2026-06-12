@@ -1,0 +1,96 @@
+{
+  "questions": [
+    {
+      "id": "q1",
+      "text": "What is the explicit, one-sentence intent of this scaffold? Is the goal to provide a reusable starting template for all future Go services, or is this a specific standalone service?",
+      "context": "The Intent section must be clearly and formally articulated. Understanding whether this is a reusable template vs. a one-off service changes the scope and design significantly.",
+      "options": [
+        "Reusable scaffold/template for all future Go microservices in this repo/org",
+        "A specific standalone Go service that happens to start minimal",
+        "Both \u2014 a working service that also serves as a reference implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "q2",
+      "text": "Which specific Kubernetes health/uptime endpoints should the service expose?",
+      "context": "Kubernetes probes require specific routes. The PRD says 'typical' endpoints but does not enumerate them, which is insufficient for code generation.",
+      "options": [
+        "/healthz (liveness)",
+        "/readyz (readiness)",
+        "/livez (liveness, alternative naming)",
+        "/metrics (Prometheus)",
+        "All of the above",
+        "Only /healthz and /readyz"
+      ],
+      "required": true
+    },
+    {
+      "id": "q3",
+      "text": "Which Echo middleware should be included in the default middleware stack?",
+      "context": "The PRD mentions 'typical handlers for logging, error handling and security' without specifying which ones. This is needed to generate the correct scaffolding code.",
+      "options": [
+        "Logger (Echo built-in or zerolog/zap)",
+        "Recover (panic recovery)",
+        "CORS",
+        "Secure/Helmet (security headers)",
+        "Rate Limiter",
+        "Request ID",
+        "All of the above"
+      ],
+      "required": true
+    },
+    {
+      "id": "q4",
+      "text": "What are the explicit Non-Goals for this scaffold? What should it deliberately NOT include?",
+      "context": "Non-Goals prevent scope creep and clarify what artifact generators should omit. For example: no auth, no database, no deployment YAML, no business logic.",
+      "options": [
+        "No authentication/authorization",
+        "No database or persistence layer",
+        "No Kubernetes deployment manifests (YAML)",
+        "No business logic beyond ping",
+        "No CI/CD pipeline setup",
+        "All of the above"
+      ],
+      "required": true
+    },
+    {
+      "id": "q5",
+      "text": "What is the background or motivation for creating this scaffold? Is there an existing service or template it replaces, or is this greenfield?",
+      "context": "The Background section provides context for why this work is being done. This helps reviewers and future maintainers understand the rationale.",
+      "options": [
+        "Greenfield \u2014 no prior scaffold exists",
+        "Replacing an existing template or boilerplate",
+        "Standardizing across multiple teams/repos that currently diverge"
+      ],
+      "required": false
+    },
+    {
+      "id": "q6",
+      "text": "What Go module path and Go version should be used for this service?",
+      "context": "Code generation requires a concrete module name (e.g., github.com/org/skafolding) and a target Go version (e.g., 1.22).",
+      "options": [],
+      "required": true
+    },
+    {
+      "id": "q7",
+      "text": "Should the scaffold include configuration management (e.g., environment variable parsing, a config struct)? If so, which library, if any, is preferred?",
+      "context": "Most production Go services need some form of config loading. It is unclear if this is in or out of scope for the initial scaffold.",
+      "options": [
+        "Yes \u2014 env vars only (e.g., os.Getenv or godotenv)",
+        "Yes \u2014 structured config with a library (e.g., viper, envconfig, koanf)",
+        "No \u2014 keep it out of scope for now"
+      ],
+      "required": false
+    }
+  ],
+  "answers": {
+    "q1": "",
+    "q2": "",
+    "q3": "",
+    "q4": "",
+    "q5": "",
+    "q6": "",
+    "q7": ""
+  }
+}

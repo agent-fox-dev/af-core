@@ -1,0 +1,742 @@
+{
+  "$schema": null,
+  "spec_id": "01_skafolding",
+  "spec_name": "01_skafolding",
+  "schema_version": 1,
+  "test_commands": {
+    "spec_tests": "go test ./... -v -run 'TestPing|TestHealthz|TestReadyz|TestMiddleware|TestLayout|TestBuild'",
+    "all_tests": "go build ./... && go test ./... -v -count=1",
+    "linter": "golangci-lint run ./..."
+  },
+  "dependencies": [
+    {
+      "depends_on_spec": "",
+      "from_group": 1,
+      "to_group": 2,
+      "relationship": "TASK-001 (go.mod + Echo dependency) and TASK-002 (directory layout) must be complete before handler implementations in group 2 can be written.",
+      "sentinel": false
+    },
+    {
+      "depends_on_spec": "",
+      "from_group": 2,
+      "to_group": 3,
+      "relationship": "Handler implementations (TASK-004, TASK-005, TASK-006) must exist before `main.go` can import and register them (TASK-007, TASK-008, TASK-009).",
+      "sentinel": false
+    },
+    {
+      "depends_on_spec": "",
+      "from_group": 3,
+      "to_group": 4,
+      "relationship": "All source files (`main.go`, `handler.go`, `go.mod`) must be complete before wiring verification checks can be run.",
+      "sentinel": false
+    },
+    {
+      "depends_on_spec": "",
+      "from_group": 4,
+      "to_group": 5,
+      "relationship": "Wiring verification must pass before the full test suite (group 5) is authored and executed against the implementation.",
+      "sentinel": false
+    },
+    {
+      "depends_on_spec": "",
+      "from_group": 5,
+      "to_group": 6,
+      "relationship": "All tests in group 5 must pass before the final checkpoint (group 6) can be signed off.",
+      "sentinel": true
+    }
+  ],
+  "task_groups": [
+    {
+      "id": 1,
+      "kind": "standard",
+      "title": "",
+      "subtasks": [
+        {
+          "id": "TASK-001",
+          "title": "",
+          "details": [
+            "Create `go.mod` at the repository root declaring module path `github.com/agent-fox-dev/srv-skafolding`.",
+            "Set the minimum Go version directive to `go 1.25` or higher.",
+            "Run `go mod tidy` to generate an initial `go.sum` file after Echo is added as a dependency."
+          ],
+          "test_spec_refs": [
+            "TC-008"
+          ],
+          "requirement_refs": [
+            "REQ-001-AC-01"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-002",
+          "title": "",
+          "details": [
+            "Create the directory tree: `cmd/server/`, `internal/handler/`.",
+            "Create stub (empty/minimal) files: `cmd/server/main.go`, `internal/handler/handler.go`, `README.md`.",
+            "Verify all required paths exist: `cmd/server/main.go`, `internal/handler/handler.go`, `go.mod`, `go.sum`, `README.md`."
+          ],
+          "test_spec_refs": [
+            "TC-009"
+          ],
+          "requirement_refs": [
+            "REQ-001-AC-03"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-003",
+          "title": "",
+          "details": [
+            "Add Echo v4 (`github.com/labstack/echo/v4`) as the sole direct dependency in `go.mod`.",
+            "Confirm no other third-party direct dependencies are introduced.",
+            "Run `go mod tidy` and inspect `go.mod` to ensure only Echo and its transitive standard-library dependencies are listed."
+          ],
+          "test_spec_refs": [
+            "ECT-009"
+          ],
+          "requirement_refs": [
+            "REQ-001-EC-01"
+          ],
+          "state": "pending",
+          "optional": false
+        }
+      ],
+      "verification": {
+        "id": "",
+        "checks": []
+      }
+    },
+    {
+      "id": 2,
+      "kind": "standard",
+      "title": "",
+      "subtasks": [
+        {
+          "id": "TASK-004",
+          "title": "",
+          "details": [
+            "In `internal/handler/handler.go`, implement a `Ping` handler function with signature `func Ping(c echo.Context) error`.",
+            "The handler must return HTTP 200 OK with JSON body `{\"message\":\"pong\"}` using `c.JSON(http.StatusOK, ...)`.",
+            "Ensure the `Content-Type: application/json` header is set automatically by Echo's JSON helper."
+          ],
+          "test_spec_refs": [
+            "TC-001",
+            "TC-014"
+          ],
+          "requirement_refs": [
+            "REQ-002-AC-01",
+            "REQ-002-AC-02"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-005",
+          "title": "",
+          "details": [
+            "In `internal/handler/handler.go`, implement a `Healthz` handler function with signature `func Healthz(c echo.Context) error`.",
+            "The handler must return HTTP 200 OK with no required body (e.g., `c.NoContent(http.StatusOK)` or a minimal OK body)."
+          ],
+          "test_spec_refs": [
+            "TC-002",
+            "TC-015"
+          ],
+          "requirement_refs": [
+            "REQ-003-AC-01",
+            "REQ-003-AC-02"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-006",
+          "title": "",
+          "details": [
+            "In `internal/handler/handler.go`, implement a `Readyz` handler function with signature `func Readyz(c echo.Context) error`.",
+            "The handler must return HTTP 200 OK with no required body (e.g., `c.NoContent(http.StatusOK)` or a minimal OK body)."
+          ],
+          "test_spec_refs": [
+            "TC-003",
+            "TC-016"
+          ],
+          "requirement_refs": [
+            "REQ-004-AC-01",
+            "REQ-004-AC-02"
+          ],
+          "state": "pending",
+          "optional": false
+        }
+      ],
+      "verification": {
+        "id": "",
+        "checks": []
+      }
+    },
+    {
+      "id": 3,
+      "kind": "standard",
+      "title": "",
+      "subtasks": [
+        {
+          "id": "TASK-007",
+          "title": "",
+          "details": [
+            "In `cmd/server/main.go`, create an `echo.New()` instance.",
+            "Register middleware in order: first `middleware.Logger()`, second `middleware.Recover()`, third `middleware.CORS()` — all via `e.Use(...)`.",
+            "Do not register any additional middleware (no rate limiting, Helmet, JWT, BasicAuth, KeyAuth, BodyLimit, etc.).",
+            "Use only Echo's built-in `echo/middleware` package for all three middleware components."
+          ],
+          "test_spec_refs": [
+            "TC-013",
+            "TC-004",
+            "TC-005",
+            "TC-006",
+            "ECT-010"
+          ],
+          "requirement_refs": [
+            "REQ-005-AC-01",
+            "REQ-005-AC-02",
+            "REQ-005-AC-03",
+            "REQ-005-AC-04",
+            "REQ-005-AC-05"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-008",
+          "title": "",
+          "details": [
+            "In `cmd/server/main.go`, register the three routes on the Echo instance after middleware setup:",
+            "  `e.GET(\"/ping\", handler.Ping)`",
+            "  `e.GET(\"/healthz\", handler.Healthz)`",
+            "  `e.GET(\"/readyz\", handler.Readyz)`",
+            "Import `internal/handler` using the full module path `github.com/agent-fox-dev/srv-skafolding/internal/handler`."
+          ],
+          "test_spec_refs": [
+            "TC-014",
+            "TC-015",
+            "TC-016"
+          ],
+          "requirement_refs": [
+            "REQ-002-AC-02",
+            "REQ-003-AC-02",
+            "REQ-004-AC-02"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-009",
+          "title": "",
+          "details": [
+            "In `cmd/server/main.go`, start the HTTP server using `e.Start(\":8080\")` with a hardcoded address.",
+            "Do not read any environment variables, parse CLI flags, or open configuration files at startup.",
+            "Handle the error returned by `e.Start()`: if non-nil, surface it (e.g., via `e.Logger.Fatal(err)`) and allow the process to exit with a non-zero status code.",
+            "Confirm `os.Getenv`, `flag.Parse`, and `os.Open` (or equivalent config reads) are absent from `main.go`."
+          ],
+          "test_spec_refs": [
+            "TC-011",
+            "TC-012",
+            "ECT-008"
+          ],
+          "requirement_refs": [
+            "REQ-006-AC-01",
+            "REQ-006-AC-02"
+          ],
+          "state": "pending",
+          "optional": false
+        }
+      ],
+      "verification": {
+        "id": "",
+        "checks": []
+      }
+    },
+    {
+      "id": 4,
+      "kind": "wiring_verification",
+      "title": "",
+      "subtasks": [],
+      "verification": {
+        "id": "WV-001",
+        "checks": [
+          "REQ-001-AC-01: `go.mod` declares module `github.com/agent-fox-dev/srv-skafolding` and `go 1.25` or higher.",
+          "REQ-001-AC-02: `go build ./...` exits with code 0 and no stderr output.",
+          "REQ-001-AC-03: Files `cmd/server/main.go`, `internal/handler/handler.go`, `go.mod`, `go.sum`, `README.md` all exist at their specified paths.",
+          "REQ-001-AC-04: All packages under `cmd/` declare `package main`.",
+          "REQ-001-AC-05: No external module can import `internal/handler`; toolchain enforces the boundary.",
+          "REQ-001-EC-01: Only `labstack/echo/v4` and its transitive deps appear as direct dependencies in `go.mod`.",
+          "REQ-005-AC-01: Middleware registration order in `main.go` is Logger → Recover → CORS.",
+          "REQ-005-AC-05: No forbidden middleware identifiers (RateLimiter, Helmet, JWT, BasicAuth, KeyAuth, BodyLimit) present in `main.go`.",
+          "REQ-006-AC-02: `os.Getenv`, `flag.Parse`, and config-file reads are absent from `main.go`."
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "kind": "tests",
+      "title": "",
+      "subtasks": [
+        {
+          "id": "TASK-010",
+          "title": "",
+          "details": [
+            "Write a CI/shell-level test that runs `go build ./...` from the repository root and asserts exit code 0 with empty stderr.",
+            "This test must be re-run after every code change to guard against build regressions (property test PT-005)."
+          ],
+          "test_spec_refs": [
+            "TC-007",
+            "PT-005"
+          ],
+          "requirement_refs": [
+            "REQ-001-AC-02"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-011",
+          "title": "",
+          "details": [
+            "Write a Go test (or shell script) that reads `go.mod` and asserts the module path and minimum Go version (TC-008).",
+            "Write file-existence checks for all required paths: `cmd/server/main.go`, `internal/handler/handler.go`, `go.mod`, `go.sum`, `README.md` (TC-009).",
+            "Use `go list ./cmd/...` to assert all packages under `cmd/` declare `package main` (TC-010)."
+          ],
+          "test_spec_refs": [
+            "TC-008",
+            "TC-009",
+            "TC-010"
+          ],
+          "requirement_refs": [
+            "REQ-001-AC-01",
+            "REQ-001-AC-03",
+            "REQ-001-AC-04"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-012",
+          "title": "",
+          "details": [
+            "Write a static-analysis / source-inspection test that reads `cmd/server/main.go` and:",
+            "  1. Asserts `middleware.Logger` appears before `middleware.Recover`, and `middleware.Recover` before `middleware.CORS` (TC-013).",
+            "  2. Asserts absence of `os.Getenv`, `flag.Parse`, `os.Open` (TC-012).",
+            "  3. Asserts absence of forbidden middleware identifiers: RateLimiter, Helmet, JWT, BasicAuth, KeyAuth, BodyLimit (ECT-010)."
+          ],
+          "test_spec_refs": [
+            "TC-013",
+            "TC-012",
+            "ECT-010"
+          ],
+          "requirement_refs": [
+            "REQ-005-AC-01",
+            "REQ-006-AC-02",
+            "REQ-005-AC-05"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-013",
+          "title": "",
+          "details": [
+            "Write Go integration tests in a `_test` package that spin up the Echo server (or use `httptest.NewServer`) and assert:",
+            "  TC-001 / PT-001: GET /ping → 200 OK, body `{\"message\":\"pong\"}`, Content-Type `application/json`.",
+            "  TC-002 / PT-002: GET /healthz → 200 OK.",
+            "  TC-003 / PT-002: GET /readyz → 200 OK.",
+            "  TC-014: Source-level check that `Ping` is defined in `internal/handler/handler.go` and registered in `main.go`.",
+            "  TC-015: Source-level check that `Healthz` is defined in `internal/handler/handler.go` and registered in `main.go`.",
+            "  TC-016: Source-level check that `Readyz` is defined in `internal/handler/handler.go` and registered in `main.go`."
+          ],
+          "test_spec_refs": [
+            "TC-001",
+            "TC-002",
+            "TC-003",
+            "TC-014",
+            "TC-015",
+            "TC-016",
+            "PT-001",
+            "PT-002"
+          ],
+          "requirement_refs": [
+            "REQ-002-AC-01",
+            "REQ-002-AC-02",
+            "REQ-003-AC-01",
+            "REQ-003-AC-02",
+            "REQ-004-AC-01",
+            "REQ-004-AC-02"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-014",
+          "title": "",
+          "details": [
+            "TC-004: Capture log output during a GET /ping request and assert log line contains 'GET', '/ping', '200'.",
+            "TC-005 / ECT-006 / PT-004: Register a test-only panic route; assert GET to that route returns 500, then assert GET /ping still returns 200 (server alive).",
+            "TC-006 / PT-003: Send an OPTIONS preflight with `Origin: http://example.com` to /ping; assert `Access-Control-Allow-Origin` header is present in the response.",
+            "ECT-007: After a panic request, assert the captured log contains '500'."
+          ],
+          "test_spec_refs": [
+            "TC-004",
+            "TC-005",
+            "TC-006",
+            "ECT-006",
+            "ECT-007",
+            "PT-003",
+            "PT-004"
+          ],
+          "requirement_refs": [
+            "REQ-005-AC-02",
+            "REQ-005-AC-03",
+            "REQ-005-AC-04",
+            "REQ-005-EC-01",
+            "REQ-005-EC-02"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-015",
+          "title": "",
+          "details": [
+            "ECT-001: POST /ping → assert 405 Method Not Allowed.",
+            "ECT-002: PUT /ping → assert 405 Method Not Allowed.",
+            "ECT-003: DELETE /ping → assert 405 Method Not Allowed.",
+            "ECT-012: PATCH /ping → assert 405 Method Not Allowed.",
+            "ECT-004: POST /healthz → assert 405 Method Not Allowed.",
+            "ECT-005: POST /readyz → assert 405 Method Not Allowed."
+          ],
+          "test_spec_refs": [
+            "ECT-001",
+            "ECT-002",
+            "ECT-003",
+            "ECT-004",
+            "ECT-005",
+            "ECT-012"
+          ],
+          "requirement_refs": [
+            "REQ-002-EC-01",
+            "REQ-003-EC-01",
+            "REQ-004-EC-01"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-016",
+          "title": "",
+          "details": [
+            "TC-011: Start the compiled service binary (port :8080 free), wait ~500ms, send GET /ping, assert 200, stop the process.",
+            "ECT-008: Pre-bind port :8080 with a dummy listener, then start the service binary, wait for it to exit, assert non-zero exit code and error message referencing :8080 in stderr/stdout."
+          ],
+          "test_spec_refs": [
+            "TC-011",
+            "ECT-008"
+          ],
+          "requirement_refs": [
+            "REQ-006-AC-01",
+            "REQ-006-EC-01"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-017",
+          "title": "",
+          "details": [
+            "Create a temporary external Go module in a temp directory that attempts to import `github.com/agent-fox-dev/srv-skafolding/internal/handler`.",
+            "Run `go build` on that external module and assert exit code is non-zero and stderr contains 'use of internal package'.",
+            "This validates the Go toolchain enforces the `internal/` boundary (PT-006)."
+          ],
+          "test_spec_refs": [
+            "ECT-011",
+            "PT-006"
+          ],
+          "requirement_refs": [
+            "REQ-001-AC-05"
+          ],
+          "state": "pending",
+          "optional": false
+        },
+        {
+          "id": "TASK-018",
+          "title": "",
+          "details": [
+            "Parse `go.mod` and extract all direct `require` directives.",
+            "Assert the only direct dependency is `github.com/labstack/echo/v4` (plus `github.com/labstack/gommon` and other Echo-owned transitive deps as allowed).",
+            "Fail if any unrelated third-party direct dependency is found."
+          ],
+          "test_spec_refs": [
+            "ECT-009"
+          ],
+          "requirement_refs": [
+            "REQ-001-EC-01"
+          ],
+          "state": "pending",
+          "optional": false
+        }
+      ],
+      "verification": {
+        "id": "",
+        "checks": []
+      }
+    },
+    {
+      "id": 6,
+      "kind": "checkpoint",
+      "title": "",
+      "subtasks": [
+        {
+          "id": "TASK-019",
+          "title": "",
+          "details": [
+            "All task groups 1–5 are complete and all tests pass.",
+            "`go build ./...` exits 0 with no errors (TC-007, ST-005).",
+            "GET /ping returns 200 with `{\"message\":\"pong\"}` and `Content-Type: application/json` (TC-001, ST-001).",
+            "GET /healthz returns 200 (TC-002, ST-002).",
+            "GET /readyz returns 200 (TC-003, ST-003).",
+            "Logger, Recovery, CORS middleware active in correct order for all routes (TC-013, TC-004, TC-005, TC-006).",
+            "Panic in handler returns 500 and server remains alive (TC-005, ECT-006, ST-004).",
+            "Non-GET methods on /ping, /healthz, /readyz return 405 (ECT-001 through ECT-005, ECT-012).",
+            "Project layout matches specification (TC-009).",
+            "No extra dependencies or middleware (ECT-009, ECT-010).",
+            "Internal package import boundary enforced by Go toolchain (ECT-011, PT-006).",
+            "Server starts on :8080 without config (TC-011); exits non-zero on port conflict (ECT-008)."
+          ],
+          "test_spec_refs": [
+            "TC-001",
+            "TC-002",
+            "TC-003",
+            "TC-004",
+            "TC-005",
+            "TC-006",
+            "TC-007",
+            "TC-008",
+            "TC-009",
+            "TC-010",
+            "TC-011",
+            "TC-012",
+            "TC-013",
+            "TC-014",
+            "TC-015",
+            "TC-016",
+            "ECT-001",
+            "ECT-002",
+            "ECT-003",
+            "ECT-004",
+            "ECT-005",
+            "ECT-006",
+            "ECT-007",
+            "ECT-008",
+            "ECT-009",
+            "ECT-010",
+            "ECT-011",
+            "ECT-012",
+            "PT-001",
+            "PT-002",
+            "PT-003",
+            "PT-004",
+            "PT-005",
+            "PT-006",
+            "ST-001",
+            "ST-002",
+            "ST-003",
+            "ST-004",
+            "ST-005"
+          ],
+          "requirement_refs": [
+            "REQ-001-AC-01",
+            "REQ-001-AC-02",
+            "REQ-001-AC-03",
+            "REQ-001-AC-04",
+            "REQ-001-AC-05",
+            "REQ-001-EC-01",
+            "REQ-002-AC-01",
+            "REQ-002-AC-02",
+            "REQ-002-EC-01",
+            "REQ-003-AC-01",
+            "REQ-003-AC-02",
+            "REQ-003-EC-01",
+            "REQ-004-AC-01",
+            "REQ-004-AC-02",
+            "REQ-004-EC-01",
+            "REQ-005-AC-01",
+            "REQ-005-AC-02",
+            "REQ-005-AC-03",
+            "REQ-005-AC-04",
+            "REQ-005-AC-05",
+            "REQ-005-EC-01",
+            "REQ-005-EC-02",
+            "REQ-006-AC-01",
+            "REQ-006-AC-02",
+            "REQ-006-EC-01"
+          ],
+          "state": "pending",
+          "optional": false
+        }
+      ],
+      "verification": {
+        "id": "",
+        "checks": []
+      }
+    }
+  ],
+  "traceability": [
+    {
+      "requirement_id": "REQ-001-AC-01",
+      "test_spec_id": "TC-008",
+      "task_id": "TASK-001",
+      "test_path": "TC-008"
+    },
+    {
+      "requirement_id": "REQ-001-AC-02",
+      "test_spec_id": "TC-007",
+      "task_id": "TASK-010",
+      "test_path": "TC-007"
+    },
+    {
+      "requirement_id": "REQ-001-AC-03",
+      "test_spec_id": "TC-009",
+      "task_id": "TASK-002",
+      "test_path": "TC-009"
+    },
+    {
+      "requirement_id": "REQ-001-AC-04",
+      "test_spec_id": "TC-010",
+      "task_id": "TASK-011",
+      "test_path": "TC-010"
+    },
+    {
+      "requirement_id": "REQ-001-AC-05",
+      "test_spec_id": "ECT-011",
+      "task_id": "TASK-017",
+      "test_path": "ECT-011"
+    },
+    {
+      "requirement_id": "REQ-001-EC-01",
+      "test_spec_id": "ECT-009",
+      "task_id": "TASK-018",
+      "test_path": "ECT-009"
+    },
+    {
+      "requirement_id": "REQ-002-AC-01",
+      "test_spec_id": "TC-001",
+      "task_id": "TASK-004",
+      "test_path": "TC-001"
+    },
+    {
+      "requirement_id": "REQ-002-AC-02",
+      "test_spec_id": "TC-014",
+      "task_id": "TASK-004",
+      "test_path": "TC-014"
+    },
+    {
+      "requirement_id": "REQ-002-EC-01",
+      "test_spec_id": "ECT-001",
+      "task_id": "TASK-015",
+      "test_path": "ECT-001"
+    },
+    {
+      "requirement_id": "REQ-003-AC-01",
+      "test_spec_id": "TC-002",
+      "task_id": "TASK-005",
+      "test_path": "TC-002"
+    },
+    {
+      "requirement_id": "REQ-003-AC-02",
+      "test_spec_id": "TC-015",
+      "task_id": "TASK-005",
+      "test_path": "TC-015"
+    },
+    {
+      "requirement_id": "REQ-003-EC-01",
+      "test_spec_id": "ECT-004",
+      "task_id": "TASK-015",
+      "test_path": "ECT-004"
+    },
+    {
+      "requirement_id": "REQ-004-AC-01",
+      "test_spec_id": "TC-003",
+      "task_id": "TASK-006",
+      "test_path": "TC-003"
+    },
+    {
+      "requirement_id": "REQ-004-AC-02",
+      "test_spec_id": "TC-016",
+      "task_id": "TASK-006",
+      "test_path": "TC-016"
+    },
+    {
+      "requirement_id": "REQ-004-EC-01",
+      "test_spec_id": "ECT-005",
+      "task_id": "TASK-015",
+      "test_path": "ECT-005"
+    },
+    {
+      "requirement_id": "REQ-005-AC-01",
+      "test_spec_id": "TC-013",
+      "task_id": "TASK-007",
+      "test_path": "TC-013"
+    },
+    {
+      "requirement_id": "REQ-005-AC-02",
+      "test_spec_id": "TC-004",
+      "task_id": "TASK-007",
+      "test_path": "TC-004"
+    },
+    {
+      "requirement_id": "REQ-005-AC-03",
+      "test_spec_id": "TC-005",
+      "task_id": "TASK-007",
+      "test_path": "TC-005"
+    },
+    {
+      "requirement_id": "REQ-005-AC-04",
+      "test_spec_id": "TC-006",
+      "task_id": "TASK-007",
+      "test_path": "TC-006"
+    },
+    {
+      "requirement_id": "REQ-005-AC-05",
+      "test_spec_id": "ECT-010",
+      "task_id": "TASK-012",
+      "test_path": "ECT-010"
+    },
+    {
+      "requirement_id": "REQ-005-EC-01",
+      "test_spec_id": "ECT-006",
+      "task_id": "TASK-014",
+      "test_path": "ECT-006"
+    },
+    {
+      "requirement_id": "REQ-005-EC-02",
+      "test_spec_id": "ECT-007",
+      "task_id": "TASK-014",
+      "test_path": "ECT-007"
+    },
+    {
+      "requirement_id": "REQ-006-AC-01",
+      "test_spec_id": "TC-011",
+      "task_id": "TASK-009",
+      "test_path": "TC-011"
+    },
+    {
+      "requirement_id": "REQ-006-AC-02",
+      "test_spec_id": "TC-012",
+      "task_id": "TASK-009",
+      "test_path": "TC-012"
+    },
+    {
+      "requirement_id": "REQ-006-EC-01",
+      "test_spec_id": "ECT-008",
+      "task_id": "TASK-016",
+      "test_path": "ECT-008"
+    }
+  ]
+}

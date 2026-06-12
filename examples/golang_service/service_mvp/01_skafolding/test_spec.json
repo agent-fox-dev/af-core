@@ -1,0 +1,755 @@
+{
+  "$schema": null,
+  "spec_id": "01_skafolding",
+  "spec_name": "01_skafolding",
+  "schema_version": 1,
+  "test_cases": [
+    {
+      "id": "TC-001",
+      "requirement_id": "REQ-002-AC-01",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Service is running and listening on :8080"
+      ],
+      "input": {
+        "method": "GET",
+        "path": "/ping"
+      },
+      "expected": {
+        "body": {
+          "message": "pong"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 200
+      },
+      "assertion_pseudocode": "resp = httpGet(':8080/ping'); assert resp.status == 200; assert json(resp.body) == {\"message\":\"pong\"}; assert resp.headers['Content-Type'] contains 'application/json'"
+    },
+    {
+      "id": "TC-002",
+      "requirement_id": "REQ-003-AC-01",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Service is running and listening on :8080"
+      ],
+      "input": {
+        "method": "GET",
+        "path": "/healthz"
+      },
+      "expected": {
+        "status": 200
+      },
+      "assertion_pseudocode": "resp = httpGet(':8080/healthz'); assert resp.status == 200"
+    },
+    {
+      "id": "TC-003",
+      "requirement_id": "REQ-004-AC-01",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Service is running and listening on :8080"
+      ],
+      "input": {
+        "method": "GET",
+        "path": "/readyz"
+      },
+      "expected": {
+        "status": 200
+      },
+      "assertion_pseudocode": "resp = httpGet(':8080/readyz'); assert resp.status == 200"
+    },
+    {
+      "id": "TC-004",
+      "requirement_id": "REQ-005-AC-02",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Service is running",
+        "Logger middleware is active",
+        "Log output is captured"
+      ],
+      "input": {
+        "method": "GET",
+        "path": "/ping"
+      },
+      "expected": {
+        "log_line_contains": [
+          "GET",
+          "/ping",
+          "200"
+        ]
+      },
+      "assertion_pseudocode": "capturedLogs = captureStdout(); httpGet(':8080/ping'); assert capturedLogs contains 'GET'; assert capturedLogs contains '/ping'; assert capturedLogs contains '200'"
+    },
+    {
+      "id": "TC-005",
+      "requirement_id": "REQ-005-AC-03",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Service is running with Recovery middleware active",
+        "A test route /panic-test is registered that calls panic('test panic')"
+      ],
+      "input": {
+        "method": "GET",
+        "path": "/panic-test"
+      },
+      "expected": {
+        "server_still_running": true,
+        "status": 500
+      },
+      "assertion_pseudocode": "resp = httpGet(':8080/panic-test'); assert resp.status == 500; resp2 = httpGet(':8080/ping'); assert resp2.status == 200"
+    },
+    {
+      "id": "TC-006",
+      "requirement_id": "REQ-005-AC-04",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Service is running and listening on :8080"
+      ],
+      "input": {
+        "headers": {
+          "Access-Control-Request-Method": "GET",
+          "Origin": "http://example.com"
+        },
+        "method": "OPTIONS",
+        "path": "/ping"
+      },
+      "expected": {
+        "headers_present": [
+          "Access-Control-Allow-Origin"
+        ]
+      },
+      "assertion_pseudocode": "resp = httpOptions(':8080/ping', headers={'Origin':'http://example.com','Access-Control-Request-Method':'GET'}); assert 'Access-Control-Allow-Origin' in resp.headers"
+    },
+    {
+      "id": "TC-007",
+      "requirement_id": "REQ-001-AC-02",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Repository root is the working directory",
+        "Go toolchain 1.25+ is installed"
+      ],
+      "input": {
+        "command": "go build ./..."
+      },
+      "expected": {
+        "exit_code": 0,
+        "stderr": ""
+      },
+      "assertion_pseudocode": "result = exec('go build ./...'); assert result.exit_code == 0; assert result.stderr == ''"
+    },
+    {
+      "id": "TC-008",
+      "requirement_id": "REQ-001-AC-01",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "go.mod is present at the repository root"
+      ],
+      "input": {
+        "file": "go.mod"
+      },
+      "expected": {
+        "go_version_min": "1.25",
+        "module": "github.com/agent-fox-dev/srv-skafolding"
+      },
+      "assertion_pseudocode": "content = readFile('go.mod'); assert content contains 'module github.com/agent-fox-dev/srv-skafolding'; assert goVersionAtLeast(content, '1.25')"
+    },
+    {
+      "id": "TC-009",
+      "requirement_id": "REQ-001-AC-03",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Repository has been cloned or checked out"
+      ],
+      "input": {
+        "paths_to_check": [
+          "cmd/server/main.go",
+          "internal/handler/handler.go",
+          "go.mod",
+          "go.sum",
+          "README.md"
+        ]
+      },
+      "expected": {
+        "all_paths_exist": true
+      },
+      "assertion_pseudocode": "for path in ['cmd/server/main.go','internal/handler/handler.go','go.mod','go.sum','README.md']: assert fileExists(path)"
+    },
+    {
+      "id": "TC-010",
+      "requirement_id": "REQ-001-AC-04",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Repository source is available"
+      ],
+      "input": {
+        "directory": "cmd/"
+      },
+      "expected": {
+        "all_packages_are_main": true
+      },
+      "assertion_pseudocode": "pkgs = goListPackages('cmd/...'); for pkg in pkgs: assert pkg.packageName == 'main'"
+    },
+    {
+      "id": "TC-011",
+      "requirement_id": "REQ-006-AC-01",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Port :8080 is free",
+        "Service binary has been built"
+      ],
+      "input": {
+        "action": "run service binary"
+      },
+      "expected": {
+        "accepts_connections": true,
+        "listening_on": ":8080"
+      },
+      "assertion_pseudocode": "proc = startService(); sleep(500ms); resp = httpGet(':8080/ping'); assert resp.status == 200; proc.stop()"
+    },
+    {
+      "id": "TC-012",
+      "requirement_id": "REQ-006-AC-02",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Repository source is available"
+      ],
+      "input": {
+        "file": "cmd/server/main.go"
+      },
+      "expected": {
+        "no_config_file_reading": true,
+        "no_env_var_parsing": true,
+        "no_flag_parsing": true
+      },
+      "assertion_pseudocode": "src = readFile('cmd/server/main.go'); assert 'os.Getenv' not in src; assert 'flag.Parse' not in src; assert 'os.Open' not in src"
+    },
+    {
+      "id": "TC-013",
+      "requirement_id": "REQ-005-AC-01",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Repository source is available"
+      ],
+      "input": {
+        "file": "cmd/server/main.go"
+      },
+      "expected": {
+        "middleware_order": [
+          "Logger",
+          "Recover",
+          "CORS"
+        ]
+      },
+      "assertion_pseudocode": "src = readFile('cmd/server/main.go'); posLogger = src.indexOf('middleware.Logger'); posRecover = src.indexOf('middleware.Recover'); posCORS = src.indexOf('middleware.CORS'); assert posLogger < posRecover; assert posRecover < posCORS"
+    },
+    {
+      "id": "TC-014",
+      "requirement_id": "REQ-002-AC-02",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Repository source is available"
+      ],
+      "input": {
+        "files": [
+          "internal/handler/handler.go",
+          "cmd/server/main.go"
+        ]
+      },
+      "expected": {
+        "ping_handler_in_internal": true,
+        "ping_registered_in_main": true
+      },
+      "assertion_pseudocode": "handlerSrc = readFile('internal/handler/handler.go'); assert handlerSrc defines a ping handler function; mainSrc = readFile('cmd/server/main.go'); assert mainSrc registers GET /ping route"
+    },
+    {
+      "id": "TC-015",
+      "requirement_id": "REQ-003-AC-02",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Repository source is available"
+      ],
+      "input": {
+        "files": [
+          "internal/handler/handler.go",
+          "cmd/server/main.go"
+        ]
+      },
+      "expected": {
+        "healthz_handler_in_internal": true,
+        "healthz_registered_in_main": true
+      },
+      "assertion_pseudocode": "handlerSrc = readFile('internal/handler/handler.go'); assert handlerSrc defines a healthz handler function; mainSrc = readFile('cmd/server/main.go'); assert mainSrc registers GET /healthz route"
+    },
+    {
+      "id": "TC-016",
+      "requirement_id": "REQ-004-AC-02",
+      "kind": "functional",
+      "description": "",
+      "preconditions": [
+        "Repository source is available"
+      ],
+      "input": {
+        "files": [
+          "internal/handler/handler.go",
+          "cmd/server/main.go"
+        ]
+      },
+      "expected": {
+        "readyz_handler_in_internal": true,
+        "readyz_registered_in_main": true
+      },
+      "assertion_pseudocode": "handlerSrc = readFile('internal/handler/handler.go'); assert handlerSrc defines a readyz handler function; mainSrc = readFile('cmd/server/main.go'); assert mainSrc registers GET /readyz route"
+    }
+  ],
+  "property_tests": [
+    {
+      "id": "PT-001",
+      "property_id": "CP-003",
+      "validates": [
+        "REQ-002-AC-01",
+        "CP-003"
+      ],
+      "description": "",
+      "for_any_strategy": "Any valid HTTP GET request to /ping (varying headers, query params, user-agents)",
+      "invariant_check": "assert response.status == 200 AND json(response.body) == {\"message\":\"pong\"} AND response.headers['Content-Type'] contains 'application/json'"
+    },
+    {
+      "id": "PT-002",
+      "property_id": "CP-004",
+      "validates": [
+        "REQ-003-AC-01",
+        "REQ-004-AC-01",
+        "CP-004"
+      ],
+      "description": "",
+      "for_any_strategy": "Any valid HTTP GET request to /healthz or /readyz (varying headers, timing during server lifetime)",
+      "invariant_check": "assert response.status == 200"
+    },
+    {
+      "id": "PT-003",
+      "property_id": "CP-001",
+      "validates": [
+        "REQ-005-AC-01",
+        "REQ-005-AC-02",
+        "REQ-005-AC-04",
+        "CP-001"
+      ],
+      "description": "",
+      "for_any_strategy": "Any HTTP request to any registered route (/ping, /healthz, /readyz)",
+      "invariant_check": "assert Logger middleware emitted a log line AND CORS headers present in response AND (if panic occurred: Recovery returned 500)"
+    },
+    {
+      "id": "PT-004",
+      "property_id": "CP-002",
+      "validates": [
+        "REQ-005-AC-03",
+        "REQ-005-EC-01",
+        "CP-002"
+      ],
+      "description": "",
+      "for_any_strategy": "Any handler that calls panic() with any value (string, error, nil, integer)",
+      "invariant_check": "assert response.status == 500 AND server process is still alive (subsequent GET /ping returns 200)"
+    },
+    {
+      "id": "PT-005",
+      "property_id": "CP-005",
+      "validates": [
+        "REQ-001-AC-01",
+        "REQ-001-AC-02",
+        "CP-005"
+      ],
+      "description": "",
+      "for_any_strategy": "Any state of the repository after any code change (property: build must not regress)",
+      "invariant_check": "assert exec('go build ./...').exit_code == 0"
+    },
+    {
+      "id": "PT-006",
+      "property_id": "CP-006",
+      "validates": [
+        "REQ-001-AC-05",
+        "CP-006"
+      ],
+      "description": "",
+      "for_any_strategy": "Any external Go module path attempting to import any package under internal/",
+      "invariant_check": "assert go build of external module exits non-zero with 'use of internal package' error"
+    }
+  ],
+  "edge_case_tests": [
+    {
+      "id": "ECT-001",
+      "requirement_id": "REQ-002-EC-01",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "Service is running and listening on :8080"
+      ],
+      "input": {
+        "method": "POST",
+        "path": "/ping"
+      },
+      "expected": {
+        "status": 405
+      },
+      "assertion_pseudocode": "resp = httpPost(':8080/ping', body={}); assert resp.status == 405"
+    },
+    {
+      "id": "ECT-002",
+      "requirement_id": "REQ-002-EC-01",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "Service is running and listening on :8080"
+      ],
+      "input": {
+        "method": "PUT",
+        "path": "/ping"
+      },
+      "expected": {
+        "status": 405
+      },
+      "assertion_pseudocode": "resp = httpPut(':8080/ping', body={}); assert resp.status == 405"
+    },
+    {
+      "id": "ECT-003",
+      "requirement_id": "REQ-002-EC-01",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "Service is running and listening on :8080"
+      ],
+      "input": {
+        "method": "DELETE",
+        "path": "/ping"
+      },
+      "expected": {
+        "status": 405
+      },
+      "assertion_pseudocode": "resp = httpDelete(':8080/ping'); assert resp.status == 405"
+    },
+    {
+      "id": "ECT-004",
+      "requirement_id": "REQ-003-EC-01",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "Service is running and listening on :8080"
+      ],
+      "input": {
+        "method": "POST",
+        "path": "/healthz"
+      },
+      "expected": {
+        "status": 405
+      },
+      "assertion_pseudocode": "resp = httpPost(':8080/healthz', body={}); assert resp.status == 405"
+    },
+    {
+      "id": "ECT-005",
+      "requirement_id": "REQ-004-EC-01",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "Service is running and listening on :8080"
+      ],
+      "input": {
+        "method": "POST",
+        "path": "/readyz"
+      },
+      "expected": {
+        "status": 405
+      },
+      "assertion_pseudocode": "resp = httpPost(':8080/readyz', body={}); assert resp.status == 405"
+    },
+    {
+      "id": "ECT-006",
+      "requirement_id": "REQ-005-EC-01",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "Service is running with Recovery middleware active",
+        "A test route /panic-test is registered that calls panic('simulated failure')"
+      ],
+      "input": [
+        {
+          "method": "GET",
+          "path": "/panic-test"
+        },
+        {
+          "method": "GET",
+          "path": "/ping"
+        }
+      ],
+      "expected": {
+        "first_response_status": 500,
+        "second_response_status": 200,
+        "server_process_alive": true
+      },
+      "assertion_pseudocode": "resp1 = httpGet(':8080/panic-test'); assert resp1.status == 500; resp2 = httpGet(':8080/ping'); assert resp2.status == 200"
+    },
+    {
+      "id": "ECT-007",
+      "requirement_id": "REQ-005-EC-02",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "Service is running",
+        "Log output is captured",
+        "A test route /panic-test panics"
+      ],
+      "input": {
+        "method": "GET",
+        "path": "/panic-test"
+      },
+      "expected": {
+        "log_contains_500": true
+      },
+      "assertion_pseudocode": "capturedLogs = captureStdout(); httpGet(':8080/panic-test'); assert capturedLogs contains '500'"
+    },
+    {
+      "id": "ECT-008",
+      "requirement_id": "REQ-006-EC-01",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "Port :8080 is already bound by another process"
+      ],
+      "input": {
+        "action": "start the service binary"
+      },
+      "expected": {
+        "error_message_surfaced": true,
+        "exit_code_nonzero": true
+      },
+      "assertion_pseudocode": "bindPort(':8080'); result = startService(); waitForExit(result); assert result.exit_code != 0; assert result.stderr or result.stdout contains error message about :8080"
+    },
+    {
+      "id": "ECT-009",
+      "requirement_id": "REQ-001-EC-01",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "go.mod is present"
+      ],
+      "input": {
+        "file": "go.mod"
+      },
+      "expected": {
+        "only_echo_and_transitive_deps": true
+      },
+      "assertion_pseudocode": "deps = goListModDependencies('go.mod'); nonEchoDeps = [d for d in deps if not isEchoOrTransitive(d)]; assert len(nonEchoDeps) == 0"
+    },
+    {
+      "id": "ECT-010",
+      "requirement_id": "REQ-005-AC-05",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "Repository source is available"
+      ],
+      "input": {
+        "file": "cmd/server/main.go"
+      },
+      "expected": {
+        "no_extra_middleware": true
+      },
+      "assertion_pseudocode": "src = readFile('cmd/server/main.go'); forbiddenMiddleware = ['RateLimiter','Helmet','JWT','BasicAuth','KeyAuth','BodyLimit']; for m in forbiddenMiddleware: assert m not in src"
+    },
+    {
+      "id": "ECT-011",
+      "requirement_id": "REQ-001-AC-05",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "An external test module exists that attempts to import github.com/agent-fox-dev/srv-skafolding/internal/handler"
+      ],
+      "input": {
+        "command": "go build <external-module>"
+      },
+      "expected": {
+        "error_contains": "use of internal package",
+        "exit_code": 1
+      },
+      "assertion_pseudocode": "result = exec('go build <external-module-importing-internal>'); assert result.exit_code != 0; assert 'use of internal package' in result.stderr"
+    },
+    {
+      "id": "ECT-012",
+      "requirement_id": "REQ-002-EC-01",
+      "kind": "negative",
+      "description": "",
+      "preconditions": [
+        "Service is running and listening on :8080"
+      ],
+      "input": {
+        "method": "PATCH",
+        "path": "/ping"
+      },
+      "expected": {
+        "status": 405
+      },
+      "assertion_pseudocode": "resp = httpPatch(':8080/ping', body={}); assert resp.status == 405"
+    }
+  ],
+  "smoke_tests": [
+    {
+      "id": "ST-001",
+      "execution_path_id": "EP-001",
+      "description": "",
+      "trigger": "Send GET /ping to the running service on :8080",
+      "real_components": [
+        "cmd/server/main.go",
+        "internal/handler/handler.go",
+        "Echo router",
+        "Logger middleware",
+        "Recovery middleware",
+        "CORS middleware"
+      ],
+      "mockable": [],
+      "expected_effects": [
+        "HTTP 200 OK status code returned",
+        "Response body is {\"message\":\"pong\"}",
+        "Content-Type header is application/json",
+        "Logger middleware emits a log line containing GET, /ping, and 200"
+      ]
+    },
+    {
+      "id": "ST-002",
+      "execution_path_id": "EP-002",
+      "description": "",
+      "trigger": "Send GET /healthz to the running service on :8080",
+      "real_components": [
+        "cmd/server/main.go",
+        "internal/handler/handler.go",
+        "Echo router",
+        "Logger middleware",
+        "Recovery middleware",
+        "CORS middleware"
+      ],
+      "mockable": [],
+      "expected_effects": [
+        "HTTP 200 OK status code returned",
+        "Logger middleware emits a log line containing GET, /healthz, and 200"
+      ]
+    },
+    {
+      "id": "ST-003",
+      "execution_path_id": "EP-003",
+      "description": "",
+      "trigger": "Send GET /readyz to the running service on :8080",
+      "real_components": [
+        "cmd/server/main.go",
+        "internal/handler/handler.go",
+        "Echo router",
+        "Logger middleware",
+        "Recovery middleware",
+        "CORS middleware"
+      ],
+      "mockable": [],
+      "expected_effects": [
+        "HTTP 200 OK status code returned",
+        "Logger middleware emits a log line containing GET, /readyz, and 200"
+      ]
+    },
+    {
+      "id": "ST-004",
+      "execution_path_id": "EP-004",
+      "description": "",
+      "trigger": "Send a request to a handler that deliberately calls panic()",
+      "real_components": [
+        "cmd/server/main.go",
+        "Echo router",
+        "Recovery middleware",
+        "Logger middleware"
+      ],
+      "mockable": [
+        "panicking handler stub registered on a test route"
+      ],
+      "expected_effects": [
+        "HTTP 500 Internal Server Error returned to the client",
+        "Server process continues running and accepts subsequent requests",
+        "Logger middleware emits a log entry with status 500"
+      ]
+    },
+    {
+      "id": "ST-005",
+      "execution_path_id": "EP-005",
+      "description": "",
+      "trigger": "Run `go build ./...` from the repository root",
+      "real_components": [
+        "go.mod",
+        "cmd/server/main.go",
+        "internal/handler/handler.go",
+        "Go toolchain"
+      ],
+      "mockable": [],
+      "expected_effects": [
+        "Command exits with status code 0",
+        "No error output on stderr",
+        "Binary artifact produced without warnings"
+      ]
+    }
+  ],
+  "coverage": {
+    "requirements_covered": [
+      "REQ-001-AC-01",
+      "REQ-001-AC-02",
+      "REQ-001-AC-03",
+      "REQ-001-AC-04",
+      "REQ-001-AC-05",
+      "REQ-001-EC-01",
+      "REQ-002-AC-01",
+      "REQ-002-AC-02",
+      "REQ-002-EC-01",
+      "REQ-003-AC-01",
+      "REQ-003-AC-02",
+      "REQ-003-EC-01",
+      "REQ-004-AC-01",
+      "REQ-004-AC-02",
+      "REQ-004-EC-01",
+      "REQ-005-AC-01",
+      "REQ-005-AC-02",
+      "REQ-005-AC-03",
+      "REQ-005-AC-04",
+      "REQ-005-AC-05",
+      "REQ-005-EC-01",
+      "REQ-005-EC-02",
+      "REQ-006-AC-01",
+      "REQ-006-AC-02",
+      "REQ-006-EC-01"
+    ],
+    "properties_covered": [
+      "CP-001",
+      "CP-002",
+      "CP-003",
+      "CP-004",
+      "CP-005",
+      "CP-006"
+    ],
+    "paths_covered": [
+      "EP-001",
+      "EP-002",
+      "EP-003",
+      "EP-004",
+      "EP-005"
+    ],
+    "gaps": [
+      "EH-004 (404 for unregistered paths) — not explicitly covered by a dedicated test case; Echo's default behaviour is implicitly trusted but could be added as ECT-013 if desired.",
+      "Concurrent panic recovery (multiple simultaneous panicking requests) — not modelled; could be added as a load/stress property test.",
+      "Logger output format validation beyond the presence of method/path/status fields — format is implementation-defined by Echo and not fully specified in the PRD."
+    ]
+  }
+}

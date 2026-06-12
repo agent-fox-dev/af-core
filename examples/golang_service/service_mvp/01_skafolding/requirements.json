@@ -1,0 +1,546 @@
+{
+  "$schema": null,
+  "spec_id": "01_skafolding",
+  "spec_name": "01_skafolding",
+  "schema_version": 1,
+  "introduction": "This artifact defines the requirements for the srv-skafolding service — a minimal, greenfield Go service built on the Echo framework. It serves as a clean starting point for future development by exposing three HTTP endpoints (/ping, /healthz, /readyz), applying a standard middleware stack (Logger, Recovery, CORS), and following idiomatic Go project layout conventions. No business logic, authentication, database integration, or deployment infrastructure is in scope.",
+  "glossary": {
+    "/healthz": "An HTTP GET endpoint used as a Kubernetes liveness probe; returns 200 OK to confirm the process is alive.",
+    "/ping": "An HTTP GET endpoint that returns a JSON pong response, confirming the service is reachable.",
+    "/readyz": "An HTTP GET endpoint used as a Kubernetes readiness probe; returns 200 OK to confirm the service is ready to accept traffic.",
+    "CORS": "Cross-Origin Resource Sharing — Echo's built-in middleware (echo/middleware.CORS) that adds the appropriate HTTP headers to allow browsers to make cross-origin requests to the service.",
+    "Echo": "A high-performance, minimalist Go web framework (labstack/echo v4) used to define routes, apply middleware, and serve HTTP requests.",
+    "Logger": "Echo's built-in middleware (echo/middleware.Logger) that emits structured request/response log lines for every HTTP transaction.",
+    "Recovery": "Echo's built-in middleware (echo/middleware.Recover) that catches panics occurring inside handlers and returns a 500 Internal Server Error response, preventing process crashes.",
+    "cmd/": "A top-level directory that contains only main packages (entry points) for the service.",
+    "go.mod": "The Go module definition file declaring the module path (github.com/agent-fox-dev/srv-skafolding) and the minimum Go version (1.25+).",
+    "go.sum": "The Go checksum database file that records the expected cryptographic hashes of module dependencies.",
+    "handler.go": "The file at internal/handler/handler.go that contains all HTTP handler implementations for the ping, healthz, and readyz endpoints.",
+    "hardcoded default address": "The fixed listen address (e.g., :8080) used by the HTTP server in the absence of any configuration management or environment variable parsing.",
+    "internal/": "A top-level directory whose packages are private to this module and cannot be imported by external projects, as enforced by the Go toolchain.",
+    "liveness probe": "A Kubernetes mechanism that periodically calls /healthz to determine whether the container process should be restarted.",
+    "main.go": "The service entry point located at cmd/server/main.go; responsible for wiring up Echo, registering middleware and routes, and starting the HTTP server.",
+    "middleware": "Functions that wrap HTTP handlers to provide cross-cutting concerns such as logging, panic recovery, and CORS enforcement, applied globally to all routes in a defined order.",
+    "module path": "The canonical import path of the Go module, declared in go.mod as github.com/agent-fox-dev/srv-skafolding.",
+    "panic": "A Go runtime condition in which a goroutine terminates abnormally; the Recovery middleware catches panics in handlers so the server process continues running.",
+    "pong response": "The JSON payload {\"message\":\"pong\"} returned by the /ping endpoint.",
+    "readiness probe": "A Kubernetes mechanism that periodically calls /readyz to determine whether the container should receive incoming traffic."
+  },
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "title": "",
+      "user_story": {
+        "role": "developer",
+        "goal": "have a minimal Go service scaffold that compiles and runs out of the box",
+        "benefit": "I can use it as a clean starting point for further development without setting up boilerplate from scratch"
+      },
+      "acceptance_criteria": [
+        {
+          "id": "REQ-001-AC-01",
+          "ears_pattern": "ubiquitous",
+          "system": "The repository",
+          "action": "must contain a valid `go.mod` file declaring module path `github.com/agent-fox-dev/srv-skafolding` and a minimum Go version of 1.25 or higher",
+          "return_contract": null
+        },
+        {
+          "id": "REQ-001-AC-02",
+          "ears_pattern": "ubiquitous",
+          "system": "The build command `go build ./...`",
+          "action": "must complete successfully with zero errors against the repository root",
+          "return_contract": null
+        },
+        {
+          "id": "REQ-001-AC-03",
+          "ears_pattern": "ubiquitous",
+          "system": "The repository",
+          "action": "must follow the prescribed project layout: `cmd/server/main.go`, `internal/handler/handler.go`, `go.mod`, `go.sum`, and `README.md` present at their specified paths",
+          "return_contract": null
+        },
+        {
+          "id": "REQ-001-AC-04",
+          "ears_pattern": "ubiquitous",
+          "system": "`cmd/` directory",
+          "action": "must contain only `main` packages (entry points) and no library code",
+          "return_contract": null
+        },
+        {
+          "id": "REQ-001-AC-05",
+          "ears_pattern": "ubiquitous",
+          "system": "`internal/` directory",
+          "action": "must contain all service-private code and must not be importable by external Go modules",
+          "return_contract": null
+        }
+      ],
+      "edge_cases": [
+        {
+          "id": "REQ-001-EC-01",
+          "ears_pattern": "unwanted",
+          "system": "The repository",
+          "action": "must not introduce any dependency beyond the Echo framework and its transitive standard-library dependencies",
+          "return_contract": null,
+          "error_condition": "a third-party dependency other than Echo (labstack/echo v4) or its own transitive dependencies is added to go.mod"
+        }
+      ]
+    },
+    {
+      "id": "REQ-002",
+      "title": "",
+      "user_story": {
+        "role": "API consumer",
+        "goal": "call GET /ping and receive a JSON pong response",
+        "benefit": "I can verify that the service is reachable and responding correctly"
+      },
+      "acceptance_criteria": [
+        {
+          "id": "REQ-002-AC-01",
+          "ears_pattern": "event_driven",
+          "system": "The service",
+          "action": "must return HTTP status 200 OK with a JSON body `{\"message\":\"pong\"}` and a `Content-Type: application/json` header",
+          "return_contract": "HTTP 200 OK; body: {\"message\":\"pong\"}; Content-Type: application/json",
+          "trigger": "a client sends GET /ping"
+        },
+        {
+          "id": "REQ-002-AC-02",
+          "ears_pattern": "ubiquitous",
+          "system": "The `/ping` handler",
+          "action": "must be implemented inside `internal/handler/handler.go` and registered on the `Echo` instance in `main.go`",
+          "return_contract": null
+        }
+      ],
+      "edge_cases": [
+        {
+          "id": "REQ-002-EC-01",
+          "ears_pattern": "unwanted",
+          "system": "The `/ping` endpoint",
+          "action": "must return HTTP 405 Method Not Allowed",
+          "return_contract": "HTTP 405 Method Not Allowed",
+          "error_condition": "a client sends a non-GET HTTP method (e.g., POST, PUT, DELETE) to /ping"
+        }
+      ]
+    },
+    {
+      "id": "REQ-003",
+      "title": "",
+      "user_story": {
+        "role": "Kubernetes operator",
+        "goal": "have a GET /healthz endpoint that returns 200 OK",
+        "benefit": "the liveness probe can confirm the process is alive and avoid unnecessary restarts"
+      },
+      "acceptance_criteria": [
+        {
+          "id": "REQ-003-AC-01",
+          "ears_pattern": "event_driven",
+          "system": "The service",
+          "action": "must return HTTP status 200 OK",
+          "return_contract": "HTTP 200 OK",
+          "trigger": "a client sends GET /healthz"
+        },
+        {
+          "id": "REQ-003-AC-02",
+          "ears_pattern": "ubiquitous",
+          "system": "The `/healthz` handler",
+          "action": "must be implemented inside `internal/handler/handler.go` and registered on the `Echo` instance in `main.go`",
+          "return_contract": null
+        }
+      ],
+      "edge_cases": [
+        {
+          "id": "REQ-003-EC-01",
+          "ears_pattern": "unwanted",
+          "system": "The `/healthz` endpoint",
+          "action": "must return HTTP 405 Method Not Allowed",
+          "return_contract": "HTTP 405 Method Not Allowed",
+          "error_condition": "a client sends a non-GET HTTP method to /healthz"
+        }
+      ]
+    },
+    {
+      "id": "REQ-004",
+      "title": "",
+      "user_story": {
+        "role": "Kubernetes operator",
+        "goal": "have a GET /readyz endpoint that returns 200 OK",
+        "benefit": "the readiness probe can confirm the service is ready to accept traffic before routing requests to it"
+      },
+      "acceptance_criteria": [
+        {
+          "id": "REQ-004-AC-01",
+          "ears_pattern": "event_driven",
+          "system": "The service",
+          "action": "must return HTTP status 200 OK",
+          "return_contract": "HTTP 200 OK",
+          "trigger": "a client sends GET /readyz"
+        },
+        {
+          "id": "REQ-004-AC-02",
+          "ears_pattern": "ubiquitous",
+          "system": "The `/readyz` handler",
+          "action": "must be implemented inside `internal/handler/handler.go` and registered on the `Echo` instance in `main.go`",
+          "return_contract": null
+        }
+      ],
+      "edge_cases": [
+        {
+          "id": "REQ-004-EC-01",
+          "ears_pattern": "unwanted",
+          "system": "The `/readyz` endpoint",
+          "action": "must return HTTP 405 Method Not Allowed",
+          "return_contract": "HTTP 405 Method Not Allowed",
+          "error_condition": "a client sends a non-GET HTTP method to /readyz"
+        }
+      ]
+    },
+    {
+      "id": "REQ-005",
+      "title": "",
+      "user_story": {
+        "role": "developer",
+        "goal": "have Logger, Recovery, and CORS middleware applied globally to all routes in the correct order",
+        "benefit": "every request is logged, panics are caught without crashing the process, and cross-origin requests are handled correctly"
+      },
+      "acceptance_criteria": [
+        {
+          "id": "REQ-005-AC-01",
+          "ears_pattern": "ubiquitous",
+          "system": "The `Echo` instance in `main.go`",
+          "action": "must register `Logger` middleware first, `Recovery` middleware second, and `CORS` middleware third, all using Echo's built-in middleware package",
+          "return_contract": null
+        },
+        {
+          "id": "REQ-005-AC-02",
+          "ears_pattern": "event_driven",
+          "system": "The `Logger` middleware",
+          "action": "must emit a structured log line containing at minimum the HTTP method, request path, and response status code",
+          "return_contract": null,
+          "trigger": "any HTTP request is received"
+        },
+        {
+          "id": "REQ-005-AC-03",
+          "ears_pattern": "event_driven",
+          "system": "The `Recovery` middleware",
+          "action": "must catch the `panic`, return HTTP 500 Internal Server Error to the client, and allow the server process to continue handling subsequent requests",
+          "return_contract": "HTTP 500 Internal Server Error; server process remains running",
+          "trigger": "a handler panics during request processing"
+        },
+        {
+          "id": "REQ-005-AC-04",
+          "ears_pattern": "event_driven",
+          "system": "The `CORS` middleware",
+          "action": "must respond with the appropriate CORS headers using Echo's default CORS configuration",
+          "return_contract": "Appropriate Access-Control-* response headers present",
+          "trigger": "a cross-origin HTTP request or preflight OPTIONS request is received"
+        },
+        {
+          "id": "REQ-005-AC-05",
+          "ears_pattern": "ubiquitous",
+          "system": "The middleware stack",
+          "action": "must not include any middleware beyond Logger, Recovery, and CORS (e.g., no rate limiting, Helmet, or JWT middleware)",
+          "return_contract": null
+        }
+      ],
+      "edge_cases": [
+        {
+          "id": "REQ-005-EC-01",
+          "ears_pattern": "unwanted",
+          "system": "The server process",
+          "action": "must not terminate or become unresponsive",
+          "return_contract": "Server process remains alive; subsequent requests are handled normally",
+          "error_condition": "a `panic` occurs in any registered handler"
+        },
+        {
+          "id": "REQ-005-EC-02",
+          "ears_pattern": "event_driven",
+          "system": "The `Logger` middleware",
+          "action": "must still emit a log entry for the failed request, including the resulting 500 status code",
+          "return_contract": null,
+          "trigger": "a handler panics and Recovery returns a 500 response"
+        }
+      ]
+    },
+    {
+      "id": "REQ-006",
+      "title": "",
+      "user_story": {
+        "role": "developer",
+        "goal": "have the HTTP server start and listen on a hardcoded default address without any configuration",
+        "benefit": "the service can be run immediately with go run ./cmd/server without needing to set environment variables or config files"
+      },
+      "acceptance_criteria": [
+        {
+          "id": "REQ-006-AC-01",
+          "ears_pattern": "event_driven",
+          "system": "`main.go`",
+          "action": "must start an HTTP server listening on the `hardcoded default address` `:8080` and begin accepting connections",
+          "return_contract": "HTTP server listening on :8080",
+          "trigger": "the service binary is executed"
+        },
+        {
+          "id": "REQ-006-AC-02",
+          "ears_pattern": "ubiquitous",
+          "system": "The service",
+          "action": "must perform no environment variable parsing, flag parsing, or configuration file reading at startup",
+          "return_contract": null
+        }
+      ],
+      "edge_cases": [
+        {
+          "id": "REQ-006-EC-01",
+          "ears_pattern": "unwanted",
+          "system": "`main.go`",
+          "action": "must surface the error (e.g., log it) and exit with a non-zero status code",
+          "return_contract": "Non-zero exit code; error message surfaced to stderr or the logger",
+          "error_condition": "port :8080 is already in use when the service starts"
+        }
+      ]
+    }
+  ],
+  "correctness_properties": [
+    {
+      "id": "CP-001",
+      "title": "",
+      "for_any": "HTTP request sent to any registered route",
+      "invariant": "All three middleware components — `Logger`, `Recovery`, and `CORS` — are executed for every request before the route handler is invoked, in the order Logger → Recovery → CORS.",
+      "validates": [
+        "REQ-005-AC-01",
+        "REQ-005-AC-02",
+        "REQ-005-AC-04"
+      ]
+    },
+    {
+      "id": "CP-002",
+      "title": "",
+      "for_any": "execution of any handler registered on the `Echo` instance",
+      "invariant": "A `panic` in the handler never propagates beyond the `Recovery` middleware; the server process remains running and the response to the panicking request is always HTTP 500.",
+      "validates": [
+        "REQ-005-AC-03",
+        "REQ-005-EC-01",
+        "EH-001"
+      ]
+    },
+    {
+      "id": "CP-003",
+      "title": "",
+      "for_any": "GET request to `/ping`",
+      "invariant": "The response status is always 200 OK and the body is always the JSON object `{\"message\":\"pong\"}` with `Content-Type: application/json`.",
+      "validates": [
+        "REQ-002-AC-01"
+      ]
+    },
+    {
+      "id": "CP-004",
+      "title": "",
+      "for_any": "GET request to `/healthz` or `/readyz`",
+      "invariant": "The response status is always 200 OK, regardless of when during the process lifetime the probe is issued.",
+      "validates": [
+        "REQ-003-AC-01",
+        "REQ-004-AC-01"
+      ]
+    },
+    {
+      "id": "CP-005",
+      "title": "",
+      "for_any": "build invocation `go build ./...`",
+      "invariant": "The command exits with status 0 and produces no error output, confirming the module path, Go version constraint, and all source files are consistent.",
+      "validates": [
+        "REQ-001-AC-01",
+        "REQ-001-AC-02"
+      ]
+    },
+    {
+      "id": "CP-006",
+      "title": "",
+      "for_any": "package within the `internal/` directory",
+      "invariant": "No external Go module can import that package; the Go toolchain enforces this boundary via the `internal` import restriction.",
+      "validates": [
+        "REQ-001-AC-05"
+      ]
+    }
+  ],
+  "execution_paths": [
+    {
+      "id": "EP-001",
+      "title": "",
+      "steps": [
+        {
+          "actor": "Client",
+          "action": "Sends GET /ping to the service on :8080"
+        },
+        {
+          "actor": "Logger middleware",
+          "action": "Records the incoming request"
+        },
+        {
+          "actor": "Recovery middleware",
+          "action": "Wraps the handler execution to catch any panic"
+        },
+        {
+          "actor": "CORS middleware",
+          "action": "Evaluates origin and adds CORS response headers"
+        },
+        {
+          "actor": "Ping handler (internal/handler/handler.go)",
+          "action": "Constructs and returns JSON body {\"message\":\"pong\"} with HTTP 200 OK"
+        },
+        {
+          "actor": "Logger middleware",
+          "action": "Records the response status 200 and completes the log entry"
+        },
+        {
+          "actor": "Client",
+          "action": "Receives HTTP 200 OK with body {\"message\":\"pong\"}"
+        }
+      ]
+    },
+    {
+      "id": "EP-002",
+      "title": "",
+      "steps": [
+        {
+          "actor": "Kubernetes liveness probe",
+          "action": "Sends GET /healthz to the service on :8080"
+        },
+        {
+          "actor": "Logger middleware",
+          "action": "Records the incoming request"
+        },
+        {
+          "actor": "Recovery middleware",
+          "action": "Wraps the handler execution to catch any panic"
+        },
+        {
+          "actor": "CORS middleware",
+          "action": "Evaluates origin and adds CORS response headers"
+        },
+        {
+          "actor": "Healthz handler (internal/handler/handler.go)",
+          "action": "Returns HTTP 200 OK"
+        },
+        {
+          "actor": "Logger middleware",
+          "action": "Records the response status 200"
+        },
+        {
+          "actor": "Kubernetes liveness probe",
+          "action": "Receives HTTP 200 OK and marks the container as alive"
+        }
+      ]
+    },
+    {
+      "id": "EP-003",
+      "title": "",
+      "steps": [
+        {
+          "actor": "Kubernetes readiness probe",
+          "action": "Sends GET /readyz to the service on :8080"
+        },
+        {
+          "actor": "Logger middleware",
+          "action": "Records the incoming request"
+        },
+        {
+          "actor": "Recovery middleware",
+          "action": "Wraps the handler execution to catch any panic"
+        },
+        {
+          "actor": "CORS middleware",
+          "action": "Evaluates origin and adds CORS response headers"
+        },
+        {
+          "actor": "Readyz handler (internal/handler/handler.go)",
+          "action": "Returns HTTP 200 OK"
+        },
+        {
+          "actor": "Logger middleware",
+          "action": "Records the response status 200"
+        },
+        {
+          "actor": "Kubernetes readiness probe",
+          "action": "Receives HTTP 200 OK and marks the container as ready to receive traffic"
+        }
+      ]
+    },
+    {
+      "id": "EP-004",
+      "title": "",
+      "steps": [
+        {
+          "actor": "Client",
+          "action": "Sends a request to a handler that triggers a panic"
+        },
+        {
+          "actor": "Logger middleware",
+          "action": "Records the incoming request"
+        },
+        {
+          "actor": "Recovery middleware",
+          "action": "Catches the panic from the handler"
+        },
+        {
+          "actor": "Recovery middleware",
+          "action": "Returns HTTP 500 Internal Server Error to the client"
+        },
+        {
+          "actor": "Logger middleware",
+          "action": "Records the response status 500"
+        },
+        {
+          "actor": "Server process",
+          "action": "Continues running and accepts the next incoming request normally"
+        }
+      ]
+    },
+    {
+      "id": "EP-005",
+      "title": "",
+      "steps": [
+        {
+          "actor": "Developer",
+          "action": "Runs `go build ./...` from the repository root"
+        },
+        {
+          "actor": "Go toolchain",
+          "action": "Resolves the module path github.com/agent-fox-dev/srv-skafolding from go.mod"
+        },
+        {
+          "actor": "Go toolchain",
+          "action": "Compiles cmd/server/main.go and internal/handler/handler.go"
+        },
+        {
+          "actor": "Go toolchain",
+          "action": "Links the binary with Echo and its transitive dependencies"
+        },
+        {
+          "actor": "Go toolchain",
+          "action": "Exits with status 0 and no error output"
+        }
+      ]
+    }
+  ],
+  "error_handling": [
+    {
+      "id": "EH-001",
+      "condition": "A `panic` occurs inside any registered HTTP handler",
+      "behavior": "The `Recovery` middleware catches the panic, logs the stack trace, and writes an HTTP 500 Internal Server Error response to the client. The server process does not crash and continues to handle subsequent requests.",
+      "requirement_id": "REQ-005"
+    },
+    {
+      "id": "EH-002",
+      "condition": "The `hardcoded default address` `:8080` is already bound by another process when the service starts",
+      "behavior": "`main.go` receives a non-nil error from the Echo Start call, surfaces the error message (e.g., via log.Fatal or Echo's error logger), and exits with a non-zero status code.",
+      "requirement_id": "REQ-006"
+    },
+    {
+      "id": "EH-003",
+      "condition": "A client sends an HTTP method other than GET to `/ping`, `/healthz`, or `/readyz`",
+      "behavior": "Echo's router returns HTTP 405 Method Not Allowed. No handler logic is invoked.",
+      "requirement_id": "REQ-002"
+    },
+    {
+      "id": "EH-004",
+      "condition": "A client requests a path not registered on the `Echo` instance",
+      "behavior": "Echo's default not-found handler returns HTTP 404 Not Found.",
+      "requirement_id": "REQ-002"
+    }
+  ]
+}
