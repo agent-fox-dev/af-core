@@ -4,7 +4,7 @@
 **Status:** Draft
 
 This document specifies the deployable components of an af installation:
-the hub, CLI, runtime engine, MCP bridge, and memory service. It covers
+the hub, CLI, runtime engine, af SDK, and memory service. It covers
 how they communicate, how state is persisted, and how the system starts,
 stops, and recovers.
 
@@ -22,13 +22,13 @@ layer (containers, worktrees, adapters, agent lifecycle) is specified in
    network services, no cloud dependencies, no accounts.
 
 2. **Single stateful process.** The hub owns all mutable state. The CLI,
-   the MCP bridge, and the runtime engine are stateless or ephemeral. This
+   the af SDK, and the runtime engine are stateless or ephemeral. This
    makes reasoning about consistency simple: one writer, many readers.
 
 3. **Process boundaries follow trust boundaries.** The hub runs on the
-   host with full access. The MCP bridge runs inside the agent sandbox
-   with scoped identity. The harness (provider SDK or generic adapter)
-   runs inside the sandbox with no direct access to hub state.
+   host with full access. The af SDK runs inside the agent sandbox with
+   scoped identity. The harness (provider SDK or generic adapter) runs
+   inside the sandbox with no direct access to hub state.
 
 4. **Pluggable where the coordination layer says pluggable.** Memory, issue
    tracker, web search, and the container runtime are behind interfaces.
@@ -43,11 +43,11 @@ layer (containers, worktrees, adapters, agent lifecycle) is specified in
 The hub is the coordination service. It owns:
 
 - **Spec store.** Reads spec artifacts from the filesystem (written by
-  speclib via `spec` or the Planner). Serves reads to the MCP bridge
-  and the CLI. Enforces the access gate: only `active` or later specs are
+  speclib via `spec` or the Planner). Serves reads to the af SDK and
+  the CLI. Enforces the access gate: only `active` or later specs are
   served.
 - **Context store.** Persists Context metadata, source descriptors,
-  instructions, and revisions. Serves Context reads to the MCP bridge.
+  instructions, and revisions. Serves Context reads to the af SDK.
   Accepts Context edits from the CLI (Operator actions).
 - **Operational store.** Persists workspace state, campaigns, runs, agents,
   subtask execution, verification outcomes, messages, and the
@@ -63,13 +63,13 @@ The hub is the coordination service. It owns:
 - **Agent memory.** Drives the memory service through `recall` (at prompt
   assembly and behind the MCP tool) and `consolidate` (at session end).
   See [coordination-layer.md §6.6](coordination-layer.md#66-the-agent-memory-contract).
-- **Activity log.** Receives events from the MCP bridge, the runtime engine,
+- **Activity log.** Receives events from the af SDK, the runtime engine,
   and internal operations. Appends to the operational store.
 - **Coordination API.** Serves the Operator-facing API (see
   [coordination-layer.md §10.1](coordination-layer.md#101-operator-facing-api))
   over a local socket or TCP.
-- **MCP bridge API.** Serves the agent-facing API over gRPC, accepting
-  connections from MCP bridge instances inside agent containers.
+- **Agent API.** Serves the agent-facing API over gRPC, accepting
+  connections from af SDK instances inside agent sandboxes.
 
 ### 2.2 Process model
 
@@ -82,8 +82,8 @@ It listens on two interfaces:
 - **CLI socket.** A Unix domain socket (default `<data_dir>/hub.sock`) for
   CLI-to-hub communication. HTTP/JSON over the socket. Local only; no
   network exposure.
-- **Bridge port.** A TCP port (default `localhost:7400`) for MCP bridge
-  connections from agent containers. gRPC with per-agent identity tokens
+- **Agent API port.** A TCP port (default `localhost:7400`) for af SDK
+  connections from agent sandboxes. gRPC with per-agent identity tokens
   for authentication. Bound to localhost by default; bindable to a network
   interface for remote container runtimes.
 
@@ -96,14 +96,14 @@ It listens on two interfaces:
 2. Open or create the SQLite database (`<data_dir>/af.db`).
 3. Run schema migrations if needed.
 4. Verify the spec store directory exists (`<data_dir>/specs/`).
-5. Start listening on the CLI socket and bridge port.
+5. Start listening on the CLI socket and agent API port.
 6. Recover in-flight runs: re-evaluate workspace and agent state against the
    runtime engine. Agents that were running when the hub last stopped are
    detected via the container runtime (containers may still be alive) and
    their state is reconciled.
 
 **Shutdown:**
-1. Stop accepting new CLI and bridge connections.
+1. Stop accepting new CLI and agent API connections.
 2. For each active run: commit partial work, transition in-flight subtasks
    to a recoverable state, log a `hub_shutdown` activity event.
 3. Close the database.
@@ -214,8 +214,7 @@ Two paths to create a spec:
 
 The runtime engine (specified in [runtime-layer.md](runtime-layer.md)) runs
 as a library embedded in the hub, not as a separate process. The hub
-calls it to create sandboxes, start agents, manage worktrees, and
-orchestrate sidecars.
+calls it to create sandboxes, start agents, and manage worktrees.
 
 This means the hub process is the only thing the Operator needs to start.
 [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell) must be installed
@@ -229,23 +228,26 @@ host.
 - On hub startup: the runtime engine initializes, connects to the
   container backend, and inventories existing containers.
 - On workspace create: the runtime creates the worktree.
-- On run start: the runtime provisions and starts agent containers with
-  templates, MCP bridge sidecars, and mounted worktrees.
+- On run start: the runtime provisions and starts agent sandboxes with
+  templates and mounted worktrees. The af SDK (imported by the adapter)
+  connects to the hub on first use.
 - On agent stop/suspend: the runtime stops or suspends the container.
 - On workspace delete: the runtime removes containers and optionally the
   worktree and branch.
 
 ---
 
-## 5. The af MCP bridge
+## 5. The af SDK
 
-Specified in [runtime-layer.md §8](runtime-layer.md#8-the-af-mcp-bridge).
-One instance per running agent, inside the agent's container.
+Specified in [runtime-layer.md §8](runtime-layer.md#8-the-af-sdk).
+The af SDK is a Python library imported by each harness adapter inside the
+agent sandbox. One instance per running agent.
 
 ### 5.1 Hub connection
 
-The bridge connects to the hub's bridge port (`localhost:7400` by default)
-on startup. The connection parameters are injected via environment variables:
+The SDK connects to the hub's agent API port (`localhost:7400` by default)
+on first use. The connection parameters are injected via environment
+variables at sandbox creation:
 
 ```
 AF_HUB_HOST=host.containers.internal
@@ -256,29 +258,25 @@ AF_AGENT_ID=<uuid>
 AF_RUN_ID=<uuid>
 ```
 
-The agent token is a short-lived JWT issued by the hub at container
+The agent token is a short-lived JWT issued by the hub at sandbox
 creation, encoding the agent's identity (workspace, agent, run, specialist
-role). The hub validates it on every bridge request and scopes the
-response accordingly.
+role). The hub validates it on every request and scopes the response
+accordingly.
 
-### 5.2 Reconnection
+### 5.2 Connection management
 
-If the hub restarts while an agent is running, the bridge retries
-connection with exponential backoff. While disconnected, the harness can
-still work (editing files, running commands) but harness-specific tool calls
-(spec read, Context search, etc.) return errors. The bridge logs a
-`bridge_disconnected` event locally and replays it to the hub on
-reconnect.
+If the hub restarts while an agent is running, the SDK retries individual
+calls with exponential backoff. While the hub is unreachable, the harness
+can still work (editing files, running commands) but hub tool calls (spec
+read, Context search, etc.) return errors. The SDK logs failures locally
+and reports them to the hub when connectivity is restored.
 
-### 5.3 Health reporting
+### 5.3 Stall detection
 
-The bridge reports agent activity to the hub via a periodic heartbeat
-(default every 30 seconds). The heartbeat includes the agent's current
-activity (working, thinking, waiting, etc.) derived from the harness's
-observable behavior (output activity, tool calls). The hub uses
-heartbeats for stall detection: an agent whose heartbeat arrives but whose
-activity hasn't changed for a configurable duration (default 5 minutes) is
-flagged as stalled.
+The hub detects stalled agents by monitoring SDK call frequency. An agent
+that stops making SDK calls for a configurable duration (default 5 minutes)
+is flagged as stalled. No separate heartbeat protocol is needed — the
+regular flow of tool calls serves as the liveness signal.
 
 ---
 
@@ -826,15 +824,15 @@ uses server-sent events (SSE) over the same connection.
 The socket path is `<data_dir>/hub.sock` by default, overridable via
 `AF_HUB_SOCK` or `--hub-sock`.
 
-### 9.2 MCP bridge ↔ Hub
+### 9.2 af SDK ↔ Hub
 
-gRPC over TCP. The bridge is the client; the hub is the server. Each RPC
+gRPC over TCP. The SDK is the client; the hub is the server. Each RPC
 includes the agent token in metadata for authentication and scoping.
 
 Services:
 
 ```protobuf
-service AfBridge {
+service AfAgent {
   // Spec access
   rpc ReadSpec(ReadSpecRequest) returns (ReadSpecResponse);
   rpc RenderSpec(RenderSpecRequest) returns (RenderSpecResponse);
@@ -899,7 +897,7 @@ encodes:
 - `agent_id` — identifies the agent
 - `run_id` — scopes the run
 - `role` — the specialist role (used for actor capability checks)
-- `exp` — expiry (refreshed via bridge heartbeat)
+- `exp` — expiry (refreshed on SDK calls)
 
 The hub validates the token on every bridge request. An Implementor
 cannot read another workspace's spec. An Archetype cannot transition another
@@ -912,7 +910,7 @@ at the bridge boundary.
 
 Detailed in [runtime-layer.md §2.1](runtime-layer.md#21-openshell-adapter-default).
 The key guarantee: an agent sandbox sees only its mounted worktree, its
-agent home directory, and the MCP bridge socket. It cannot see the af
+agent home directory, and the af SDK's gRPC connection to the hub. It cannot see the af
 database, other agents' homes, or the spec store on the host filesystem.
 
 OpenShell enforces this through defense-in-depth, all out-of-process:
@@ -922,7 +920,7 @@ OpenShell enforces this through defense-in-depth, all out-of-process:
 - **Network:** Deny-by-default. Every outbound connection goes through an
   HTTP CONNECT proxy evaluated by OPA/Rego policies at the HTTP method and
   path level. The sandbox policy must explicitly allow egress to the hub's
-  bridge port and to the model provider's API.
+  agent API port and to the model provider's API.
 - **Process:** Seccomp BPF filters block privilege escalation, dangerous
   syscalls, and socket creation outside the proxy.
 - **Inference:** The privacy router intercepts LLM API calls, strips caller
@@ -935,9 +933,9 @@ via `openshell policy set` without restarting the sandbox.
 
 ### 10.3 Hub access
 
-The CLI socket is file-permission-protected (owner-only). The bridge port
-is localhost-only by default. No authentication is needed for the CLI socket
-(the Operator has host access); the bridge port uses agent tokens.
+The CLI socket is file-permission-protected (owner-only). The agent API
+port is localhost-only by default. No authentication is needed for the CLI
+socket (the Operator has host access); the agent API port uses agent tokens.
 
 ---
 
@@ -952,7 +950,7 @@ Operator runs `af hub start` and uses the CLI.
 ### 11.2 Future: remote hub
 
 The hub runs on a remote machine (a beefy server, a cloud VM). The CLI
-connects over TCP instead of a Unix socket. The bridge port is exposed on the
+connects over TCP instead of a Unix socket. The agent API port is exposed on the
 network with TLS. Agent containers run on the same remote machine. This
 requires adding TLS and Operator authentication to the hub — the gRPC and
 HTTP interfaces already support it structurally.
@@ -1106,8 +1104,8 @@ ci:
 
 ### 13.5 Agent access
 
-The CI/CD bridge is exposed to agents through the af MCP bridge as the
-`af_ci_status` tool. Queries and results are logged as activity events.
+The CI/CD bridge is exposed to agents through the af SDK as the
+`af.ci_status` tool. Queries and results are logged as activity events.
 The tool is read-only — agents cannot trigger pipelines or modify CI
 configuration.
 

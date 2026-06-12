@@ -6,7 +6,7 @@
 This document specifies the runtime layer that sits underneath the af
 coordination layer. It covers container isolation, git worktree management,
 harness adapters, agent lifecycle, templates, sidecar services, and the af
-MCP bridge. The design follows patterns established by Google's Scion project,
+SDK. The design follows patterns established by Google's Scion project,
 adapted to our requirements.
 
 The coordination layer (domain model, spec package, agents, orchestration)
@@ -38,7 +38,7 @@ architecture (hub, CLI, storage, deployment) is specified in
 4. **The coordination layer drives.** The runtime exposes a narrow API. The
    coordination layer calls it to start/stop agents, provision worktrees, and
    inject configuration. The runtime never calls back into the coordination
-   layer — the af MCP bridge handles that direction (§8).
+   layer — the af SDK handles that direction (§8).
 
 5. **Portable across sandbox backends.** OpenShell abstracts the underlying
    container backend: Docker, Podman, MicroVM, and Kubernetes are supported
@@ -67,7 +67,7 @@ interface ContainerRuntime:
 record ContainerSpec:
     image:      string
     name:       string
-    mounts:     list[Mount]              -- worktree, agent home, sidecar sockets
+    mounts:     list[Mount]              -- worktree, agent home
     env:        map[string, string]
     command:    list[string]
     services:   list[ServiceSpec]        -- sidecar processes
@@ -141,7 +141,7 @@ sandboxes via `openshell policy set`.
 **Policy model.** Sandbox behavior is governed by declarative YAML policies.
 The af runtime ships a default policy that allows: read-write access to
 `/workspace` and the agent home, read-only access to template files,
-localhost egress to the hub's bridge port, and inference egress to the
+localhost egress to the hub's agent API port, and inference egress to the
 configured model provider. The Operator can customize policies per workspace
 or per agent role via the configuration hierarchy (§11).
 
@@ -283,8 +283,8 @@ interface HarnessAdapter:
     -- expected location.
     injectInstructions(agentHome: string, content: string) → void
 
-    -- Translate universal MCP server configs into the harness's native
-    -- MCP configuration format.
+    -- Translate external MCP server configs (from attached Contexts) into
+    -- the harness's native MCP configuration format.
     applyMCPServers(
         agentHome: string,
         servers: map[string, MCPServerConfig]
@@ -315,9 +315,13 @@ The adapter configures the SDK and maps its lifecycle to the
   sit in this loop.
 - **System prompt:** Injected via the SDK's system prompt parameter at
   agent creation.
-- **MCP servers:** The SDK speaks MCP natively. The af MCP bridge is
-  registered as an MCP server; the SDK discovers and calls its tools
-  alongside its built-in tools (file editing, shell, etc.).
+- **af SDK integration:** The adapter imports the af SDK and registers
+  its functions (`af.spec_read`, `af.context_search`, `af.subtask_state`,
+  etc.) as Claude Agent SDK tools. The SDK communicates directly with the
+  hub over gRPC — no sidecar process.
+- **External MCP servers:** For MCP servers from attached Contexts, the
+  SDK's native MCP support is used. These are external tools, not the af
+  hub connection.
 - **Model features:** Extended thinking, prompt caching, computer use, and
   token-efficient tool results are available through the SDK as Anthropic
   ships them — no adapter changes needed.
@@ -338,8 +342,11 @@ owns the agent loop.
   tool calls, and manages session state.
 - **System prompt:** Injected via the ADK's instruction parameter at agent
   creation.
-- **MCP servers:** The ADK supports MCP tool integration. The af MCP bridge
-  is registered as an MCP server.
+- **af SDK integration:** The adapter imports the af SDK and registers
+  its functions as ADK tools. The SDK communicates directly with the hub
+  over gRPC.
+- **External MCP servers:** The ADK's MCP support is used for MCP servers
+  from attached Contexts.
 - **Auth:** `GEMINI_API_KEY` for API access, or
   `GOOGLE_APPLICATION_CREDENTIALS` for Google Cloud deployments.
 - **Resume:** Supported. The ADK supports session persistence; the adapter
@@ -387,11 +394,11 @@ af agent loop (Python)
   models.
 - **Tool set:** File read/write/edit, shell execution, git operations,
   browser control (CDP) — the same capabilities as the Tier 1 adapters,
-  implemented as LangGraph tool nodes. The af MCP bridge is connected
-  programmatically; its tools appear alongside the built-in tools.
-- **MCP servers:** The generic adapter connects to MCP servers
-  programmatically using the MCP client protocol. The af MCP bridge and
-  any Context-sourced MCP servers are available.
+  implemented as LangGraph tool nodes. The af SDK functions are registered
+  as additional tool nodes alongside the built-in tools.
+- **External MCP servers:** For MCP servers from attached Contexts, the
+  generic adapter connects to them programmatically using LangChain's MCP
+  client support.
 - **Auth:** Provider-specific API keys following each chat model's
   conventions (e.g. `OPENAI_API_KEY`, `OPENROUTER_API_KEY`,
   `TOGETHER_API_KEY`). For local inference via Ollama or vLLM, no API key
@@ -473,7 +480,7 @@ A `stopped` or `error` phase triggers error handling in the run.
 ```
 interface AgentLifecycle:
     -- Create an agent: build container spec, provision harness, copy
-    -- template, inject system prompt and MCP config. Does not start.
+    -- template, inject system prompt and af SDK config. Does not start.
     create(input: {
         name:         string
         workspace:    WorkspaceRef
@@ -534,7 +541,7 @@ A template is a blueprint for agent configuration. The coordination layer's
 specialists (see [coordination-layer.md §6.4](coordination-layer.md#64-specialists-actor-capabilities-and-instruction-precedence))
 map to templates: the specialist defines the role semantically (actor
 capability, tool policy); the template defines the configuration
-mechanically (system prompt file, env vars, MCP servers).
+mechanically (system prompt file, env vars, external MCP servers).
 
 ### 6.1 Template structure
 
@@ -560,20 +567,15 @@ env:
 # For generic adapter only: LangChain chat model provider and model
 # model: ollama:qwen3-32b
 
-mcp_servers:
-  af:
-    transport: stdio
-    command: /usr/local/bin/af-mcp-bridge
-    args: ["--workspace", "${AF_WORKSPACE_ID}"]
+# The af SDK connects to the hub using these env vars (injected by the runtime):
+#   AF_HUB_HOST, AF_HUB_PORT, AF_AGENT_TOKEN,
+#   AF_WORKSPACE_ID, AF_AGENT_ID, AF_RUN_ID
 
-services:
-  - name: af-bridge
-    command: ["/usr/local/bin/af-mcp-bridge", "--workspace", "${AF_WORKSPACE_ID}"]
-    restart: always
-    ready_check:
-      type: tcp
-      target: "localhost:7400"
-      timeout: "10s"
+# External MCP servers from attached Contexts (if any):
+# mcp_servers:
+#   external-tool:
+#     transport: stdio
+#     command: /usr/local/bin/some-mcp-server
 ```
 
 ### 6.3 Template resolution
@@ -594,11 +596,12 @@ The runtime ships default templates for each specialist role:
 | `implementor` | configurable | Implements one subtask. |
 | `verifier` | configurable | Runs verification checks. |
 
-Each template includes the af MCP bridge as a sidecar service and
-pre-configures the MCP server declaration so the harness discovers it.
-The adapter (Claude Agent SDK, Google ADK, or generic) is configurable
-per template via the `harness` field. When using the generic adapter,
-the `model` field selects the LangChain chat model provider and model.
+Each template includes the af SDK as a dependency. The SDK connects to
+the hub using environment variables injected at sandbox creation
+(`AF_HUB_HOST`, `AF_HUB_PORT`, `AF_AGENT_TOKEN`, etc.). The adapter
+(Claude Agent SDK, Google ADK, or generic) is configurable per template
+via the `harness` field. When using the generic adapter, the `model`
+field selects the LangChain chat model provider and model.
 
 ---
 
@@ -621,102 +624,114 @@ record ServiceSpec:
 ```
 
 The harness does not start until all sidecar services with readiness checks
-have reported ready. This ensures the af MCP bridge is available before
-the agent begins working.
+have reported ready.
 
 ### 7.1 Sidecars under OpenShell
 
 OpenShell sandboxes are full environments, not single-process containers.
 Each sandbox includes a shell, language runtimes, and standard developer
-tools. Sidecar services (including the af MCP bridge) run as background
-processes inside the sandbox, managed by the runtime's service supervisor.
+tools. Sidecar services run as background processes inside the sandbox,
+managed by the runtime's service supervisor.
 
-The sandbox policy must allow the network access sidecars require. For the
-af MCP bridge, this means localhost egress to the hub's bridge port
-(`AF_HUB_HOST:AF_HUB_PORT`). The default af sandbox policy includes this
-rule. Additional sidecars that reach external services need corresponding
-network policy entries — either in the default policy or in a per-workspace
-override.
+The sandbox policy must allow the network access sidecars require.
+Sidecars that reach external services need corresponding network policy
+entries — either in the default policy or in a per-workspace override.
 
 ---
 
-## 8. The af MCP bridge
+## 8. The af SDK
 
-The af MCP bridge is the key integration point between the runtime layer
-and the coordination layer. It runs as a sidecar service inside each agent
-sandbox and exposes harness-specific capabilities as MCP tools that the
-harness adapter (SDK-based or generic) can call.
+The af SDK is the integration point between the runtime layer and the
+coordination layer. It is a Python library imported by each harness
+adapter, exposing hub capabilities (spec read, Context search, memory
+recall, subtask state transitions) as native tool functions that the
+adapter registers with its provider.
 
-### 8.1 Why an MCP bridge
+### 8.1 Why an SDK, not a sidecar
 
-The runtime treats the harness as opaque — it does not intercept tool calls
-or sit in the model's reasoning loop. But the coordination layer needs to
-extend the agent's tool set with capabilities the harness doesn't natively
-have (spec read, Context search, memory recall, subtask state transitions).
-The MCP bridge resolves this: it's an MCP server the harness
-connects to, indistinguishable from any other MCP tool. The coordination
-layer's tools appear to the agent as standard MCP tools.
+The harness adapters are Python libraries (provider SDKs or LangGraph).
+The natural extension point is a function import, not a network protocol.
+The af SDK communicates directly with the hub over gRPC — no intermediate
+sidecar process, no MCP server, no readiness check, no heartbeat protocol.
+Each adapter registers the SDK's functions as native tools:
 
-### 8.2 Tools exposed
+- **Tier 1 (Claude Agent SDK):** SDK functions registered as Claude tools.
+- **Tier 1 (Google ADK):** SDK functions registered as ADK tools.
+- **Tier 2 (LangGraph):** SDK functions registered as LangGraph tool nodes.
 
-| Tool | Description | Direction |
+External MCP servers from attached Contexts are a separate concern — agents
+call *out* to those using the provider SDK's or LangChain's MCP client
+support. The af SDK handles only the *inbound* direction (agent → hub).
+
+### 8.2 Functions exposed
+
+| Function | Description | Direction |
 | --- | --- | --- |
-| `af_spec_read` | Fetch spec artifacts, rendered views, traceability, coverage. | Agent → af service |
-| `af_context_search` | Search retrieved sources in attached Contexts. Params: `query`, optional `context_id`, `source_id`, `max_results`. Returns ranked chunks. | Agent → af service |
-| `af_context_get` | Fetch a pinned source from an attached Context in full. Params: `context_id`, `source_id`. | Agent → af service |
-| `af_memory_recall` | Search agent memory for relevant learnings. | Agent → af service |
-| `af_subtask_state` | Transition the agent's own subtask state. | Agent → af service |
-| `af_ci_status` | Query CI pipeline runs, job results, and logs. | Agent → af service |
-| `af_issues` | Read, search, create, comment on, update issues through the tracker-agnostic interface. | Agent → af service |
-| `af_web_search` | Search and fetch public web content through the provider-agnostic interface. | Agent → af service |
+| `af.spec_read` | Fetch spec artifacts, rendered views, traceability, coverage. | Agent → hub |
+| `af.context_search` | Search retrieved sources in attached Contexts. Params: `query`, optional `context_id`, `source_id`, `max_results`. Returns ranked chunks. | Agent → hub |
+| `af.context_get` | Fetch a pinned source from an attached Context in full. Params: `context_id`, `source_id`. | Agent → hub |
+| `af.memory_recall` | Search agent memory for relevant learnings. | Agent → hub |
+| `af.subtask_state` | Transition the agent's own subtask state. | Agent → hub |
+| `af.ci_status` | Query CI pipeline runs, job results, and logs. | Agent → hub |
+| `af.issues` | Read, search, create, comment on, update issues through the tracker-agnostic interface. | Agent → hub |
+| `af.web_search` | Search and fetch public web content through the provider-agnostic interface. | Agent → hub |
 
 ### 8.3 Architecture
 
 ```
 ┌─── Agent Sandbox ───────────────────────────────────────┐
 │                                                         │
-│  ┌─────────────┐         ┌──────────────────────┐       │
-│  │   Harness    │◄──MCP──►│  af MCP Bridge    │       │
-│  │ (SDK adapter │         │  (sidecar service)   │       │
-│  │  or generic) │         └──────────┬───────────┘       │
-│  └──────┬──────┘                     │                   │
-│         │                            │ gRPC / HTTP       │
-│    /workspace                        │                   │
-│    (mounted worktree)                │                   │
-└─────────────────────────────────────┼───────────────────┘
-                                       │
-                          ┌────────────▼────────────┐
-                          │   af Coordination    │
-                          │       Service           │
-                          │                         │
-                          │  Spec store             │
-                          │  Context store          │
-                          │  Operational store      │
-                          │  Prompt assembly        │
-                          │  Run management         │
-                          └─────────────────────────┘
+│  ┌──────────────────────────────────────┐               │
+│  │   Harness adapter                    │               │
+│  │ (SDK-based or generic)               │               │
+│  │                                      │               │
+│  │  ┌──────────────┐                   │               │
+│  │  │   af SDK     │───── gRPC ────────┼───────────┐   │
+│  │  │  (imported)  │                   │           │   │
+│  │  └──────────────┘                   │           │   │
+│  └──────────┬───────────────────────────┘           │   │
+│             │                                       │   │
+│        /workspace                                   │   │
+│        (mounted worktree)                           │   │
+└─────────────────────────────────────────────────────┼───┘
+                                                      │
+                                         ┌────────────▼────────────┐
+                                         │   af Hub                │
+                                         │                         │
+                                         │  Spec store             │
+                                         │  Context store          │
+                                         │  Operational store      │
+                                         │  Prompt assembly        │
+                                         │  Run management         │
+                                         └─────────────────────────┘
 ```
 
-The bridge communicates with the af coordination service on the host via
-gRPC or HTTP. The coordination service is the source of truth for spec
-content, Context data, memory, and subtask state. The bridge
-is stateless — it proxies requests and returns responses.
+The SDK communicates with the hub on the host via gRPC. The hub is the
+source of truth for spec content, Context data, memory, and subtask state.
+The SDK is stateless — it sends requests and returns responses. Connection
+failures are retried per-call with exponential backoff; no persistent
+connection management is needed.
 
 ### 8.4 Authentication and scoping
 
-Every bridge instance knows its agent's identity (workspace ID, agent ID,
-run ID, specialist role) via environment variables injected at container
-creation. The coordination service uses this identity to scope tool calls:
-an Implementor's `af_subtask_state` call can only transition its own
-assigned subtask; a `af_spec_read` call returns only the artifacts for
-the agent's workspace.
+Every SDK instance knows its agent's identity (workspace ID, agent ID,
+run ID, specialist role) via environment variables injected at sandbox
+creation. The hub uses this identity to scope all calls: an Implementor's
+`af.subtask_state` call can only transition its own assigned subtask; an
+`af.spec_read` call returns only the artifacts for the agent's workspace.
+
+Authentication uses the same short-lived JWT token (`AF_AGENT_TOKEN`)
+described in [services-architecture.md §10.1](services-architecture.md#101-agent-identity).
+The SDK passes the token in gRPC metadata on every call.
 
 ### 8.5 Activity logging
 
-The bridge logs every tool call and response as activity events, forwarded
-to the coordination service. This is how harness-level tool calls (spec reads,
-Context searches, subtask transitions) enter the activity log even though
-the runtime does not intercept the harness's native tool loop.
+The SDK logs every tool call and response as activity events, sent to the
+hub as part of the call or via a batched `LogEvent` RPC. This is how
+agent-level tool calls (spec reads, Context searches, subtask transitions)
+enter the activity log. The hub uses call frequency for stall detection —
+an agent that stops making SDK calls for a configurable duration (default
+5 minutes) is flagged as stalled.
 
 ---
 
@@ -730,31 +745,31 @@ The full sequence from workspace creation to a running agent:
 2. **Coordination layer** assembles the agent configuration: resolves the
    specialist to a template, composes the system prompt (see
    [coordination-layer.md §6.3](coordination-layer.md#63-prompt-assembly)),
-   gathers MCP server configs (including the af bridge), and collects
-   environment variables.
+   gathers external MCP server configs (from attached Contexts), and
+   collects environment variables including af SDK connection parameters
+   (`AF_HUB_HOST`, `AF_HUB_PORT`, `AF_AGENT_TOKEN`, etc.).
 
 3. **Coordination layer** calls `AgentLifecycle.create()` with the assembled
    configuration.
 
 4. **Runtime** resolves the template: copies home directory content, runs the
    harness adapter's `provision()` method, calls `injectSystemPrompt()` and
-   `injectInstructions()`, calls `applyMCPServers()` to translate MCP
-   configs into the harness's native format.
+   `injectInstructions()`, calls `applyMCPServers()` to translate external
+   MCP server configs into the harness's native format.
 
 5. **Runtime** builds the `ContainerSpec`: image, mounts (worktree at
-   `/workspace`, agent home, shadow mounts for isolation), env vars, sidecar
-   services (including the af MCP bridge), and the harness command.
+   `/workspace`, agent home), env vars (including af SDK connection
+   parameters), and the harness command.
 
 6. **Runtime** calls `ContainerRuntime.create()` and
    `ContainerRuntime.start()`.
 
-7. **Runtime** starts sidecar services and waits for readiness checks.
-
-8. **Runtime** starts the harness process inside the container with the task
+7. **Runtime** starts the harness process inside the sandbox with the task
    as input.
 
-9. **Agent** begins working. The harness discovers the af MCP bridge as
-   an available MCP server and can call its tools.
+8. **Agent** begins working. The adapter imports the af SDK, which connects
+   to the hub using the injected environment variables and exposes hub tools
+   as native adapter tools.
 
 ---
 
@@ -765,7 +780,7 @@ Python 3.14, Node 22, git, and common developer tools (`gh`, `vim`, `nano`).
 The af runtime extends this with:
 
 - A terminal multiplexer (tmux).
-- The af MCP bridge binary.
+- The af SDK Python package.
 - Additional language runtimes and build tools as needed.
 
 OpenShell supports three image sources:

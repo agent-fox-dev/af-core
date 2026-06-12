@@ -454,16 +454,15 @@ a two-tier adapter model (see
   models, local inference (Ollama, vLLM on Apple Silicon), and any
   provider with a LangChain integration or an OpenAI-compatible API.
 
-The coordination layer extends the provider's tool set through the **af MCP
-bridge** (see
-[runtime-layer.md §8](runtime-layer.md#8-the-af-mcp-bridge)), a sidecar MCP
-server that exposes harness-specific tools alongside the provider's native
-tools. Both adapter tiers connect to the bridge identically.
+The coordination layer extends the provider's tool set through the **af
+SDK** (see [runtime-layer.md §8](runtime-layer.md#8-the-af-sdk)), a Python
+library imported by each adapter that exposes hub capabilities as native
+tool functions. Both adapter tiers use the SDK identically.
 
 The coordination layer interacts with a running provider through two
 channels: it injects configuration before the provider starts (system
 prompt, instructions, MCP server declarations, environment variables), and
-it receives tool calls and state updates through the MCP bridge during
+it receives tool calls and state updates through the af SDK during
 execution. This contract is the same regardless of which adapter tier runs.
 
 ### 6.2 The agent execution model
@@ -473,7 +472,7 @@ by adapter tier, but the coordination layer sees the same behavior:
 
 - **Tier 1 (provider SDK):** The SDK runs its own tool loop. It reads and
   writes files in the mounted worktree, executes shell commands, drives a
-  browser, and calls MCP tools — including the af MCP bridge — according to
+  browser, and calls af SDK functions and external MCP tools according to
   its own reasoning.
 - **Tier 2 (generic adapter):** The af runtime runs the tool loop on
   LangGraph. It calls the model through LangChain chat models, dispatches tool use
@@ -483,9 +482,9 @@ by adapter tier, but the coordination layer sees the same behavior:
 
 From the coordination layer's perspective, both tiers produce the same
 observable behavior: an agent that reads the spec, edits files, runs
-commands, calls MCP tools, and transitions subtask state. The coordination
-layer observes this through the MCP bridge and through the runtime's agent
-state reporting.
+commands, calls tools, and transitions subtask state. The coordination
+layer observes this through the af SDK's activity logging and through the
+runtime's agent state reporting.
 
 An agent can be stopped mid-execution with its session preserved for
 resume. Tier 1 adapters use the SDK's conversation continuation support;
@@ -988,7 +987,7 @@ This document specifies the coordination layer. Three companion components compl
 
 - **[Spec Creation Tool](services-architecture.md#7-the-spec-creation-tool)** — speclib (shared library), the `spec` CLI, and the agent skill. Handles spec authoring independently of the harness. Writes to the spec store filesystem. The harness Planner uses speclib for the harness-mediated authoring path.
 
-- **[Runtime Layer](runtime-layer.md)** — container isolation, worktree management, harness adapters per provider, agent lifecycle (phase and activity), templates, sidecar services, and the af MCP bridge. The coordination layer drives the runtime through a narrow interface and never reaches past it.
+- **[Runtime Layer](runtime-layer.md)** — sandbox isolation, worktree management, harness adapters per provider, agent lifecycle (phase and activity), templates, sidecar services, and the af SDK. The coordination layer drives the runtime through a narrow interface and never reaches past it.
 
 - **[Services Architecture](services-architecture.md)** — the af hub (single stateful process owning all three stores), CLI, storage layout (filesystem + SQLite), communication protocols (HTTP/JSON for CLI, gRPC for bridge), security and isolation, deployment modes, the retrieval engine, CI/CD bridge, notification service, and web dashboard.
 
@@ -998,10 +997,10 @@ This document specifies the coordination layer. Three companion components compl
 | Spec store, Context store, operational store | Worktree provisioning and mounting |
 | Runs, subtask state, verification gates | Agent start/stop/suspend/resume |
 | Activity log (harness-level events) | Provider-level telemetry |
-| The af MCP bridge logic | Container, env, and credential isolation |
+| The af SDK tool logic | Sandbox, env, and credential isolation |
 | Specialist → template mapping | Template hydration and harness provisioning |
 
-The af MCP bridge is the integration point between the two layers: it runs as a sidecar inside each agent sandbox (runtime) and proxies harness tool calls to the hub (coordination). The coordination layer does not know whether the sandbox runs on a local Docker or Podman backend or on a Kubernetes cluster — OpenShell abstracts the container backend.
+The af SDK is the integration point between the two layers: it is a library imported by each adapter inside the agent sandbox (runtime) that communicates directly with the hub (coordination) over gRPC. The coordination layer does not know whether the sandbox runs on a local Docker or Podman backend or on a Kubernetes cluster — OpenShell abstracts the container backend.
 
 ---
 
@@ -1043,7 +1042,7 @@ The af MCP bridge is the integration point between the two layers: it runs as a 
 | OpenShell | NVIDIA's open-source sandbox runtime for agent isolation. See [runtime-layer.md §2.1](runtime-layer.md#21-openshell-adapter-default). |
 | Harness adapter | Runtime adapter integrating a provider into the af runtime. Two tiers: provider SDK (Tier 1) and generic (Tier 2). See [runtime-layer.md §4](runtime-layer.md#4-harness-adapters). |
 | Template | Blueprint for agent configuration. See [runtime-layer.md §6](runtime-layer.md#6-templates). |
-| af MCP bridge | Sidecar MCP server inside each agent sandbox. See [runtime-layer.md §8](runtime-layer.md#8-the-af-mcp-bridge). |
+| af SDK | Python library imported by each adapter inside the agent sandbox. Exposes hub capabilities as native tool functions. See [runtime-layer.md §8](runtime-layer.md#8-the-af-sdk). |
 | af hub | Long-running host process owning the three stores. See [services-architecture.md §2](services-architecture.md#2-the-af-hub). |
 | af CLI | Operator's command-line interface. See [services-architecture.md §3](services-architecture.md#3-the-af-cli). |
 | Memory service | Pluggable backend for agent memory. See [services-architecture.md §6](services-architecture.md#6-the-memory-service). |
