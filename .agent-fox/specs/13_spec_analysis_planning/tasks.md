@@ -92,15 +92,15 @@ data models, spec parsing, and the planner entry point.
     - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
     - [x] Requirements 5.1-5.3 met
 
-- [ ] 3. Spec parser & planner
-  - [ ] 3.1 Implement SpecParser
+- [x] 3. Spec parser & planner
+  - [x] 3.1 Implement SpecParser
     - Create `packages/coder/coder/spec_parser.py`
     - Implement `parse(meta)` method that loads all JSON artifacts
       using afspec I/O
     - Handle missing `prd.md` gracefully
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ] 3.2 Implement build_execution_plan
+  - [x] 3.2 Implement build_execution_plan
     - Create `packages/coder/coder/planner.py`
     - Implement discovery → parse → validate → sort → plan pipeline
     - Use `afspec.discovery.discover_specs()` for discovery
@@ -110,14 +110,14 @@ data models, spec parsing, and the planner entry point.
     - Add logging at each step
     - _Requirements: 1.1, 1.2, 1.3, 3.1, 3.2, 3.3, 3.E1, 4.1, 4.2, 4.3, 4.4, 6.1, 6.2_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests pass: TS-13-1 through TS-13-10
-    - [ ] Edge case tests pass: TS-13-E1 through TS-13-E8
-    - [ ] Property tests pass: TS-13-P1 through TS-13-P4
-    - [ ] Smoke test pass: TS-13-SMOKE-1
-    - [ ] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
-    - [ ] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
-    - [ ] Requirements 1.1-6.2 met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests pass: TS-13-1 through TS-13-10
+    - [x] Edge case tests pass: TS-13-E1 through TS-13-E8
+    - [x] Property tests pass: TS-13-P1 through TS-13-P4
+    - [x] Smoke test pass: TS-13-SMOKE-1
+    - [x] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
+    - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
+    - [x] Requirements 1.1-6.2 met
 
 - [ ] 4. Wiring verification
 
