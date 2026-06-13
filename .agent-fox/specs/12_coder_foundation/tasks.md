@@ -195,8 +195,8 @@ Subsequent groups implement modules to make those tests pass.
     - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
     - [x] Requirements 5.1-5.6, 6.1-6.4 met
 
-- [ ] 5. CLI entry point
-  - [ ] 5.1 Implement CLI commands
+- [x] 5. CLI entry point
+  - [x] 5.1 Implement CLI commands
     - Create `packages/coder/coder/cli.py`
     - Implement `coder` Click group
     - Implement `coder run` subcommand with arguments:
@@ -206,12 +206,12 @@ Subsequent groups implement modules to make those tests pass.
     - Wire up config loading, provider creation, logging setup
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Spec tests pass: TS-12-17, TS-12-18
-    - [ ] Smoke test pass: TS-12-SMOKE-1
-    - [ ] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
-    - [ ] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
-    - [ ] Requirements 7.1-7.5 met
+  - [x] 5.V Verify task group 5
+    - [x] Spec tests pass: TS-12-17, TS-12-18
+    - [x] Smoke test pass: TS-12-SMOKE-1
+    - [x] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
+    - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
+    - [x] Requirements 7.1-7.5 met
 
 - [ ] 6. Wiring verification
 

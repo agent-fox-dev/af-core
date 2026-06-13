@@ -16,7 +16,7 @@ from coder.cli import cli
 @pytest.fixture()
 def cli_runner() -> CliRunner:
     """Create a Click CLI test runner."""
-    return CliRunner(mix_stderr=False)
+    return CliRunner()
 
 
 class TestRunCommand:

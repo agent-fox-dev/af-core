@@ -1,12 +1,21 @@
 """CLI entry point for the coder tool.
 
-.. note::
-    Full implementation provided by task group 5.
+Provides the ``coder`` command group with ``run`` and ``models``
+subcommands. Wires together configuration loading, provider creation,
+logging setup, and prompt assembly.
 """
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import click
+
+from coder.config import load_config
+from coder.errors import CoderError
+from coder.logging import get_logger, setup_logging
+from coder.registry import ProviderRegistry
 
 
 @click.group()
@@ -20,7 +29,7 @@ def cli() -> None:
 @click.option(
     "--repo",
     default=None,
-    help="Target repository path.",
+    help="Target repository path (defaults to current directory).",
 )
 def run(
     campaign_dir: str,
@@ -28,14 +37,66 @@ def run(
     repo: str | None,
 ) -> None:
     """Run the coding agent on a campaign directory."""
-    raise NotImplementedError(
-        "coder run not yet implemented (task group 5)"
+    logger = get_logger(__name__)
+
+    # Validate campaign directory exists
+    campaign_path = Path(campaign_dir)
+    if not campaign_path.exists():
+        click.echo(
+            f"Error: campaign directory does not exist: "
+            f"{campaign_dir}",
+            err=True,
+        )
+        sys.exit(1)
+
+    # Load configuration
+    try:
+        config = load_config()
+    except CoderError as exc:
+        click.echo(f"Error: {exc}", err=True)
+        sys.exit(1)
+
+    # Set up logging from config
+    setup_logging(config)
+
+    # Resolve model name: CLI arg > config default
+    resolved_model = model if model is not None else config.model
+
+    # Resolve repo path: CLI arg > current directory
+    repo_path = Path(repo) if repo is not None else Path.cwd()
+
+    # Create provider via registry
+    try:
+        registry = ProviderRegistry()
+        provider = registry.resolve(resolved_model)
+    except CoderError as exc:
+        click.echo(f"Error: {exc}", err=True)
+        sys.exit(1)
+    except ValueError as exc:
+        click.echo(f"Error: {exc}", err=True)
+        sys.exit(1)
+
+    # Log run parameters
+    logger.info(
+        "coder_run_start",
+        campaign_dir=str(campaign_path),
+        model=resolved_model,
+        repo=str(repo_path),
+        provider=type(provider).__name__,
     )
 
 
 @cli.command()
 def models() -> None:
     """List available models and their providers."""
-    raise NotImplementedError(
-        "coder models not yet implemented (task group 5)"
-    )
+    registry = ProviderRegistry()
+    model_list = registry.list_models()
+
+    # Print a formatted table
+    click.echo(f"{'Pattern':<20} {'Provider':<15} {'Description'}")
+    click.echo(f"{'-' * 20} {'-' * 15} {'-' * 40}")
+    for info in model_list:
+        click.echo(
+            f"{info.name:<20} {info.provider:<15} "
+            f"{info.description}"
+        )

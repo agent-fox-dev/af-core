@@ -32,7 +32,7 @@ class TestCLISmoke:
         campaign_dir = tmp_path / "campaign"
         campaign_dir.mkdir()
 
-        runner = CliRunner(mix_stderr=False)
+        runner = CliRunner()
 
         # Mock only the LLM invoke call, not provider creation
         with patch(
