@@ -173,44 +173,44 @@ spec 14, and adds console logging and post-mortem/summary generation.
     - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
     - [x] End-to-end: mock LLM that always fails → halts at max_attempts → post-mortem generated
 
-- [ ] 6. Wiring verification
+- [x] 6. Wiring verification
 
-  - [ ] 6.1 Trace every execution path from design.md end-to-end
+  - [x] 6.1 Trace every execution path from design.md end-to-end
     - Path 1: node_wrapper → CircuitBreaker.check → halt → generate_postmortem
     - Path 2: LLM invoke → TokenTracker callback → accumulate
     - Path 3: node transition → ConsoleLogger.log_transition → rich output
     - Path 4: completion/halt → write_run_summary → file + console
     - _Requirements: all_
 
-  - [ ] 6.2 Verify return values propagate correctly
+  - [x] 6.2 Verify return values propagate correctly
     - `CircuitBreaker.check()` → `CheckResult` consumed by node wrapper
     - `TokenTracker.total_tokens` → consumed by circuit breaker and summary
     - `generate_postmortem()` → `Path` logged by console
     - `write_run_summary()` → `Path` returned to runner
     - _Requirements: all_
 
-  - [ ] 6.3 Run the integration smoke tests
+  - [x] 6.3 Run the integration smoke tests
     - TS-15-SMOKE-1: Circuit breaker halts graph
     - TS-15-SMOKE-2: Token tracking end-to-end
     - _Test Spec: TS-15-SMOKE-1, TS-15-SMOKE-2_
 
-  - [ ] 6.4 Stub / dead-code audit
+  - [x] 6.4 Stub / dead-code audit
     - Search `packages/coder/coder/` for stubs, TODOs in:
       circuit.py, tokens.py, postmortem.py, console.py, summary.py
     - _Requirements: all_
 
-  - [ ] 6.5 Cross-spec entry point verification
+  - [x] 6.5 Cross-spec entry point verification
     - Verify CircuitBreaker is called from graph node wrapper (spec 14)
     - Verify TokenTracker is registered on LLM invoke (spec 12 providers)
     - Verify ConsoleLogger is called from node transitions (spec 14)
     - _Requirements: all_
 
-  - [ ] 6.V Verify wiring group
-    - [ ] All smoke tests pass
-    - [ ] No unjustified stubs remain
-    - [ ] All execution paths from design.md are live
-    - [ ] All cross-spec entry points are called from production code
-    - [ ] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
+  - [x] 6.V Verify wiring group
+    - [x] All smoke tests pass
+    - [x] No unjustified stubs remain
+    - [x] All execution paths from design.md are live
+    - [x] All cross-spec entry points are called from production code
+    - [x] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
 
 ## Traceability
 
