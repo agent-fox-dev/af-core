@@ -1,0 +1,228 @@
+# Requirements Document
+
+## Introduction
+
+This document specifies the safety and observability layer for the coder
+tool. It covers circuit breakers to prevent runaway agent execution, token
+tracking across LLM providers, post-mortem document generation, verbose
+structured console logging, and run summary reports.
+
+## Glossary
+
+- **Circuit Breaker**: A safety mechanism that halts agent execution when
+  predefined limits are exceeded (attempts, time, tokens).
+- **Post-mortem**: A markdown document generated when execution fails,
+  explaining where and why the agent got stuck.
+- **Token Tracking**: Counting input and output tokens consumed across all
+  LLM calls during a run.
+- **Run Summary**: A final report document summarizing execution results,
+  whether successful or failed.
+- **Ralph-loop**: Informal term for a runaway agent loop where the agent
+  repeatedly tries the same failing approach without making progress.
+- **LangChain Callback**: A handler registered with LangChain chat models
+  that receives events (start, end, error, token usage) during LLM calls.
+- **Graceful Shutdown**: A clean termination sequence that saves state,
+  generates the post-mortem, and exits without data loss.
+
+## Requirements
+
+### Requirement 1: Circuit Breaker Limits
+
+**User Story:** As a user, I want execution to stop automatically when the
+agent is stuck, so that I don't waste tokens and time on a failing approach.
+
+#### Acceptance Criteria
+
+[15-REQ-1.1] THE system SHALL enforce a `max_attempts_per_task` limit
+(default: 5, configurable) that halts execution when a single task group
+exceeds this many implementation attempts.
+
+[15-REQ-1.2] THE system SHALL enforce a `max_wall_time_seconds` limit
+(default: 1800, configurable) that halts execution when the total elapsed
+time for a spec run exceeds this value.
+
+[15-REQ-1.3] THE system SHALL enforce a `max_tokens` limit (default:
+2000000, configurable) that halts execution when total tokens consumed
+(input + output) across all LLM calls exceed this value.
+
+[15-REQ-1.4] WHEN any limit is breached, THE system SHALL set `halted=True`
+and `halt_reason` to a descriptive message in the graph state AND route
+to the post-mortem generation node.
+
+[15-REQ-1.5] THE circuit breaker limits SHALL be configurable via the
+`.coder.yaml` configuration file under a `safety:` key and via environment
+variables (`CODER_MAX_ATTEMPTS`, `CODER_MAX_TIME`, `CODER_MAX_TOKENS`).
+
+#### Edge Cases
+
+[15-REQ-1.E1] IF all three limits are set to zero or negative values, THEN
+THE system SHALL raise a `ConfigError` at startup rather than allowing
+immediate halt.
+
+[15-REQ-1.E2] IF a limit is not set (null/absent), THEN THE system SHALL
+treat that limit as unlimited (no enforcement for that dimension).
+
+---
+
+### Requirement 2: Token Tracking
+
+**User Story:** As a user, I want to see how many tokens each model
+consumes, so that I can compare cost efficiency across providers.
+
+#### Acceptance Criteria
+
+[15-REQ-2.1] THE system SHALL implement a `TokenTracker` using LangChain's
+`BaseCallbackHandler` that accumulates `input_tokens` and `output_tokens`
+from every LLM call AND returns the running totals on demand.
+
+[15-REQ-2.2] THE `TokenTracker` SHALL normalize token counts across
+providers: Anthropic (`input_tokens`/`output_tokens`), Google
+(`prompt_token_count`/`candidates_token_count`), and Ollama
+(`prompt_eval_count`/`eval_count`) into a unified `input_tokens` +
+`output_tokens` representation.
+
+[15-REQ-2.3] THE `TokenTracker` SHALL provide a `total_tokens` property
+that returns `input_tokens + output_tokens` AND a `to_dict()` method that
+returns the breakdown.
+
+[15-REQ-2.4] THE `TokenTracker` SHALL be registered as a callback on every
+LLM invocation through the provider's `invoke()` method.
+
+#### Edge Cases
+
+[15-REQ-2.E1] IF an LLM response does not include token usage metadata
+(e.g., some Ollama models), THEN THE tracker SHALL log a warning and
+report zero tokens for that call.
+
+---
+
+### Requirement 3: Post-mortem Generation
+
+**User Story:** As a user, I want a detailed post-mortem document when the
+agent fails, so that I can understand what went wrong and where.
+
+#### Acceptance Criteria
+
+[15-REQ-3.1] WHEN execution is halted by the circuit breaker, THE system
+SHALL generate a `_postmortem.md` markdown file in the worktree directory
+(or project root if no worktree) AND log its path to the console.
+
+[15-REQ-3.2] THE post-mortem SHALL contain the following sections:
+`## Summary` (1-2 sentence failure description), `## Halt Reason` (which
+limit was breached and current value vs limit), `## Execution Context`
+(spec name, model, task group, phase at halt), `## Attempt History`
+(timestamped list of all state transitions), `## Last Test Output` (stdout
++ stderr from the most recent test run), `## Token Usage` (breakdown by
+input/output), `## Recommendations` (actionable suggestions for the user).
+
+[15-REQ-3.3] THE post-mortem SHALL be generated by a dedicated
+`generate_postmortem` terminal node in the LangGraph, which reads the
+final graph state AND returns it unchanged.
+
+[15-REQ-3.4] IF post-mortem generation fails (e.g., I/O error), THEN THE
+system SHALL log the error and continue shutdown without crashing.
+
+#### Edge Cases
+
+[15-REQ-3.E1] IF the worktree directory does not exist (e.g., halt during
+worktree creation), THEN THE system SHALL write the post-mortem to the
+current working directory.
+
+---
+
+### Requirement 4: Verbose Console Logging
+
+**User Story:** As a user, I want real-time console output showing what the
+agent is doing, so that I can monitor progress and know the agent is alive.
+
+#### Acceptance Criteria
+
+[15-REQ-4.1] THE system SHALL display the current workflow phase name and
+task group number in the console output at every node transition.
+
+[15-REQ-4.2] THE system SHALL display test pass/fail counts and the command
+that was run after every verification step.
+
+[15-REQ-4.3] THE system SHALL display running token usage (input + output)
+and elapsed time after every LLM call.
+
+[15-REQ-4.4] THE system SHALL use `rich.console.Console` for formatted
+output with colors: green for pass, red for fail, yellow for warnings,
+blue for phase transitions.
+
+[15-REQ-4.5] THE system SHALL display a progress summary line showing
+`[task_group/total_groups] phase (attempt N/max)` at each step.
+
+#### Edge Cases
+
+[15-REQ-4.E1] IF the terminal does not support colors (non-TTY), THEN THE
+system SHALL fall back to plain text output without ANSI codes.
+
+---
+
+### Requirement 5: Graceful Shutdown
+
+**User Story:** As a user, I want the agent to shut down cleanly when a
+limit is hit, so that I don't lose state or get corrupted output.
+
+#### Acceptance Criteria
+
+[15-REQ-5.1] WHEN a circuit breaker trips, THE system SHALL complete the
+current LLM call if one is in progress (do not abort mid-stream) AND THEN
+transition to the post-mortem node.
+
+[15-REQ-5.2] WHEN shutting down, THE system SHALL persist the final run
+state to `_run.json` before generating the post-mortem.
+
+[15-REQ-5.3] WHEN shutting down, THE system SHALL leave the worktree
+intact (do not merge or delete) so the user can inspect the partial work.
+
+#### Edge Cases
+
+[15-REQ-5.E1] IF the agent receives a SIGINT (Ctrl+C) during execution,
+THEN THE system SHALL treat it as a circuit breaker trip and follow the
+graceful shutdown sequence.
+
+---
+
+### Requirement 6: Run Summary
+
+**User Story:** As a user, I want a summary document after every run
+(success or failure), so that I can see what was accomplished.
+
+#### Acceptance Criteria
+
+[15-REQ-6.1] THE system SHALL generate a `_run_summary.md` markdown file
+in the worktree directory after execution completes AND log its path.
+
+[15-REQ-6.2] THE run summary SHALL contain: spec name, model used, total
+task groups (completed/total), total tokens (input + output), total
+elapsed time, final status (success/failed/halted), and post-mortem path
+if applicable.
+
+[15-REQ-6.3] THE system SHALL print a condensed version of the run summary
+to the console at the end of execution.
+
+#### Edge Cases
+
+[15-REQ-6.E1] IF writing the run summary fails, THEN THE system SHALL log
+a warning and print the summary to the console only.
+
+---
+
+### Requirement 7: Safety Configuration
+
+**User Story:** As a user, I want to configure safety limits through the
+same configuration system as other coder settings.
+
+#### Acceptance Criteria
+
+[15-REQ-7.1] THE `.coder.yaml` SHALL support a `safety:` section with keys:
+`max_attempts_per_task` (int), `max_wall_time_seconds` (int),
+`max_tokens` (int).
+
+[15-REQ-7.2] THE `CoderConfig` model SHALL be extended with a nested
+`SafetyConfig` model containing the safety limits with defaults.
+
+[15-REQ-7.3] THE safety configuration SHALL be passed to the circuit
+breaker at initialization AND to the graph state as `max_attempts`.
