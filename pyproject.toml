@@ -5,6 +5,7 @@ description = "Monorepo workspace for the agent-fox agentic development harness 
 requires-python = ">=3.14"
 dependencies = [
     "spec-cli>=0.9.0",
+    "coder>=0.9.0",
 ]
 
 [dependency-groups]
@@ -20,7 +21,7 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["packages/afspec/tests", "packages/speclib/tests", "packages/spec-cli/tests"]
+testpaths = ["packages/afspec/tests", "packages/speclib/tests", "packages/spec-cli/tests", "packages/coder/tests"]
 addopts = "--import-mode=importlib"
 
 [tool.ruff]
@@ -42,3 +43,4 @@ members = ["packages/*"]
 afspec = { workspace = true }
 speclib = { workspace = true }
 spec-cli = { workspace = true }
+coder = { workspace = true }

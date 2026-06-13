@@ -25,8 +25,8 @@ Subsequent groups implement modules to make those tests pass.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create test file structure
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create test file structure
     - Create `packages/coder/tests/__init__.py`
     - Create `packages/coder/tests/conftest.py` with shared fixtures
       (tmp directories, env var helpers, mock providers)
@@ -37,9 +37,10 @@ Subsequent groups implement modules to make those tests pass.
     - Create `packages/coder/tests/test_prompts.py`
     - Create `packages/coder/tests/test_cli.py`
     - Create `packages/coder/tests/test_logging_setup.py`
+    - Also created `packages/coder/tests/test_smoke.py`
     - _Test Spec: TS-12-1 through TS-12-19_
 
-  - [ ] 1.2 Translate acceptance-criterion tests
+  - [x] 1.2 Translate acceptance-criterion tests
     - TS-12-1: Package importable
     - TS-12-2: Pyproject dependencies
     - TS-12-3: AnthropicProvider wraps ChatAnthropic
@@ -59,9 +60,10 @@ Subsequent groups implement modules to make those tests pass.
     - TS-12-17: CLI run validates campaign dir
     - TS-12-18: CLI run rejects missing dir
     - TS-12-19: Structured logging output
-    - _Test Spec: TS-12-1 through TS-12-19_
+    - Also: TS-12-20 through TS-12-33
+    - _Test Spec: TS-12-1 through TS-12-33_
 
-  - [ ] 1.3 Translate edge-case tests
+  - [x] 1.3 Translate edge-case tests
     - TS-12-E1: Ollama server unreachable
     - TS-12-E2: Empty model name rejected
     - TS-12-E3: No config file uses defaults
@@ -78,7 +80,7 @@ Subsequent groups implement modules to make those tests pass.
     - TS-12-E14: Campaign dir does not exist
     - _Test Spec: TS-12-E1 through TS-12-E14_
 
-  - [ ] 1.4 Translate property tests
+  - [x] 1.4 Translate property tests
     - TS-12-P1: Provider resolution determinism
     - TS-12-P2: Configuration precedence
     - TS-12-P3: Template name security
@@ -86,15 +88,15 @@ Subsequent groups implement modules to make those tests pass.
     - TS-12-P5: Safe substitution
     - _Test Spec: TS-12-P1 through TS-12-P5_
 
-  - [ ] 1.5 Translate integration smoke tests
+  - [x] 1.5 Translate integration smoke tests
     - TS-12-SMOKE-1: CLI run resolves provider
     - TS-12-SMOKE-2: Prompt assembly end-to-end
     - _Test Spec: TS-12-SMOKE-1, TS-12-SMOKE-2_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings: `uv run ruff check packages/coder/tests/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings: `uv run ruff check packages/coder/tests/`
 
 - [ ] 2. Package scaffolding & configuration
   - [ ] 2.1 Create package structure
