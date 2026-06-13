@@ -137,8 +137,8 @@ Subsequent groups implement modules to make those tests pass.
     - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
     - [x] Requirements 1.1, 1.2, 1.3, 4.1-4.5, 8.1-8.5 met
 
-- [ ] 3. LLM providers & registry
-  - [ ] 3.1 Implement LLMProvider interface and providers
+- [x] 3. LLM providers & registry
+  - [x] 3.1 Implement LLMProvider interface and providers
     - Create `packages/coder/coder/providers.py`
     - Define `LLMProvider` protocol with `model_name`, `invoke()`,
       `validate()` methods
@@ -148,7 +148,7 @@ Subsequent groups implement modules to make those tests pass.
     - Credential validation in each provider constructor
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ] 3.2 Implement ProviderRegistry
+  - [x] 3.2 Implement ProviderRegistry
     - Create `packages/coder/coder/registry.py`
     - Implement prefix-based resolution (claude- → Anthropic,
       gemini- → Google, fallback → Ollama)
@@ -156,13 +156,13 @@ Subsequent groups implement modules to make those tests pass.
     - Implement `list_models()` for the CLI
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests pass: TS-12-3 through TS-12-9
-    - [ ] Edge case tests pass: TS-12-E1, TS-12-E2
-    - [ ] Property tests pass: TS-12-P1
-    - [ ] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
-    - [ ] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
-    - [ ] Requirements 2.1-2.5, 3.1-3.5 met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests pass: TS-12-3 through TS-12-9
+    - [x] Edge case tests pass: TS-12-E1, TS-12-E2
+    - [x] Property tests pass: TS-12-P1
+    - [x] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
+    - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
+    - [x] Requirements 2.1-2.5, 3.1-3.5 met
 
 - [ ] 4. Prompt templates & assembly
   - [ ] 4.1 Implement TemplateLoader
