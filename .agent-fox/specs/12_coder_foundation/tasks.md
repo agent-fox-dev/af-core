@@ -213,16 +213,16 @@ Subsequent groups implement modules to make those tests pass.
     - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
     - [x] Requirements 7.1-7.5 met
 
-- [ ] 6. Wiring verification
+- [x] 6. Wiring verification
 
-  - [ ] 6.1 Trace every execution path from design.md end-to-end
+  - [x] 6.1 Trace every execution path from design.md end-to-end
     - Path 1: CLI invocation → config → logging → registry → provider
     - Path 2: Prompt assembly → template loader → assembler → output
     - Path 3: List models → registry → formatted output
     - Verify each function in the chain is called (not stubbed)
     - _Requirements: all_
 
-  - [ ] 6.2 Verify return values propagate correctly
+  - [x] 6.2 Verify return values propagate correctly
     - `load_config()` → `CoderConfig` consumed by CLI
     - `ProviderRegistry.resolve()` → `LLMProvider` consumed by caller
     - `TemplateLoader.load()` → `str` consumed by `PromptAssembler`
@@ -230,29 +230,29 @@ Subsequent groups implement modules to make those tests pass.
     - Grep for callers of each function; confirm return values are used
     - _Requirements: all_
 
-  - [ ] 6.3 Run the integration smoke tests
+  - [x] 6.3 Run the integration smoke tests
     - TS-12-SMOKE-1: CLI run resolves provider (real registry, no mock)
     - TS-12-SMOKE-2: Prompt assembly end-to-end (real filesystem)
     - _Test Spec: TS-12-SMOKE-1, TS-12-SMOKE-2_
 
-  - [ ] 6.4 Stub / dead-code audit
+  - [x] 6.4 Stub / dead-code audit
     - Search all files in `packages/coder/coder/` for:
       `return []`, `return None` on non-Optional returns, `pass` in
       non-abstract methods, `# TODO`, `# stub`, `NotImplementedError`
     - Each hit must be justified or replaced
     - _Requirements: all_
 
-  - [ ] 6.5 Cross-spec entry point verification
+  - [x] 6.5 Cross-spec entry point verification
     - Verify `ProviderRegistry.resolve()` is callable from spec 14 code
     - Verify `PromptAssembler.assemble()` is callable from spec 14 code
     - Verify `load_config()` is callable from spec 13/14 code
     - _Requirements: all_
 
-  - [ ] 6.V Verify wiring group
-    - [ ] All smoke tests pass
-    - [ ] No unjustified stubs remain in `packages/coder/coder/`
-    - [ ] All execution paths from design.md are live
-    - [ ] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
+  - [x] 6.V Verify wiring group
+    - [x] All smoke tests pass
+    - [x] No unjustified stubs remain in `packages/coder/coder/`
+    - [x] All execution paths from design.md are live
+    - [x] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
 
 ## Traceability
 
