@@ -73,24 +73,24 @@ data models, spec parsing, and the planner entry point.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings: `uv run ruff check packages/coder/tests/`
 
-- [ ] 2. Data models & custom exceptions
-  - [ ] 2.1 Implement data models
+- [x] 2. Data models & custom exceptions
+  - [x] 2.1 Implement data models
     - Create/update `packages/coder/coder/models.py`
     - Implement `ParsedSpec` frozen pydantic model
     - Implement `ExecutionPlan` frozen pydantic model with
       `model_dump_json()` support
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [ ] 2.2 Add planning-related exceptions
+  - [x] 2.2 Add planning-related exceptions
     - Add `SpecParseError` and `DependencyCycleError` to
       `packages/coder/coder/errors.py`
     - _Requirements: 2.E1, 2.E2, 4.3_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: TS-13-8
-    - [ ] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
-    - [ ] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
-    - [ ] Requirements 5.1-5.3 met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: TS-13-8
+    - [x] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
+    - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
+    - [x] Requirements 5.1-5.3 met
 
 - [ ] 3. Spec parser & planner
   - [ ] 3.1 Implement SpecParser

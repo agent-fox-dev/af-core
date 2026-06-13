@@ -119,3 +119,56 @@ class TemplateSecurityError(CoderError):
         )
         self.name = name
         self.reason = reason
+
+
+class SpecParseError(CoderError):
+    """Raised when a spec pack cannot be parsed.
+
+    Caused by missing required JSON files or invalid JSON syntax within
+    a spec pack directory.
+
+    Attributes:
+        spec_name: The name of the spec that failed to parse.
+        file_path: Path to the file that caused the error, if known.
+        detail: Additional detail about the parse error.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        spec_name: str | None = None,
+        file_path: str | None = None,
+        detail: str | None = None,
+    ) -> None:
+        parts = [message]
+        if spec_name:
+            parts.append(f"spec: {spec_name}")
+        if file_path:
+            parts.append(f"file: {file_path}")
+        if detail:
+            parts.append(f"detail: {detail}")
+        super().__init__(" | ".join(parts))
+        self.spec_name = spec_name
+        self.file_path = file_path
+        self.detail = detail
+
+
+class DependencyCycleError(CoderError):
+    """Raised when the dependency graph contains a cycle.
+
+    Indicates that specs cannot be topologically sorted because of
+    circular dependency relationships.
+
+    Attributes:
+        cycle: List of spec identifiers involved in the cycle.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        cycle: list[str] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.cycle = cycle or []
