@@ -147,17 +147,25 @@ class TestPostmortemTerminalNode:
         """TS-15-17: generate_postmortem_node returns state unchanged.
 
         Requirement: 15-REQ-3.3
-        Verify the node reads the final state and returns it without
-        modification.
+        Verify:
+        1. The post-mortem file is written.
+        2. The returned state is identical to the input state.
         """
         state = _make_halted_state()
+        # The node reads worktree and tracker from state
+        state["worktree"] = str(tmp_path)
+        state["token_tracker"] = _make_fake_tracker()
 
         returned_state = generate_postmortem_node(state)
 
-        # State should be unchanged (possibly the same dict)
+        # Post-mortem file should be written
+        assert (tmp_path / "_postmortem.md").exists()
+
+        # State should be unchanged
         assert returned_state["halted"] is True
         assert returned_state["halt_reason"] == state["halt_reason"]
         assert returned_state["current_phase"] == state["current_phase"]
+        assert returned_state["spec_name"] == state["spec_name"]
 
 
 class TestGracefulShutdown:

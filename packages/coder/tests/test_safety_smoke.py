@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from coder.circuit import CircuitBreaker
-from coder.postmortem import perform_graceful_shutdown
+from coder.postmortem import install_sigint_handler
 from coder.tokens import TokenTracker
 
 # ---------------------------------------------------------------------------
@@ -192,12 +192,12 @@ class TestSIGINTShutdown:
         """TS-15-E6: Verify Ctrl+C is caught and handled.
 
         Requirement: 15-REQ-5.E1
-        Send SIGINT signal and verify shutdown sequence completes.
-
-        Note: This test is inherently tricky. We verify the graceful
-        shutdown function produces the expected artifacts when called
-        as part of a SIGINT handler.
+        Install the SIGINT handler, verify it is registered, invoke it,
+        and verify that the shutdown sequence completes with artifacts
+        written.
         """
+        import signal
+
         state: dict[str, Any] = {
             "halted": True,
             "halt_reason": "SIGINT received",
@@ -223,8 +223,20 @@ class TestSIGINTShutdown:
             "call_count": 2,
         }
 
-        perform_graceful_shutdown(state, tmp_path, tracker)
+        # Install the SIGINT handler and get previous handler for restore
+        original = install_sigint_handler(state, tmp_path, tracker)
 
-        # Verify shutdown artifacts
-        assert (tmp_path / "_run.json").exists()
-        assert (tmp_path / "_postmortem.md").exists()
+        try:
+            # Verify a custom handler was registered (not the default)
+            current = signal.getsignal(signal.SIGINT)
+            assert current is not signal.default_int_handler
+
+            # Invoke the handler directly (simulates SIGINT delivery)
+            current(signal.SIGINT, None)  # type: ignore[misc]
+
+            # Verify shutdown artifacts were created
+            assert (tmp_path / "_run.json").exists()
+            assert (tmp_path / "_postmortem.md").exists()
+        finally:
+            # Restore the original signal handler
+            signal.signal(signal.SIGINT, original)

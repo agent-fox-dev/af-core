@@ -55,3 +55,23 @@ def perform_graceful_shutdown(
     raise NotImplementedError(
         "perform_graceful_shutdown not yet implemented"
     )
+
+
+def install_sigint_handler(
+    state: dict[str, Any],
+    worktree: Path,
+    tracker: Any,
+) -> Any:
+    """Install a SIGINT handler that triggers graceful shutdown.
+
+    Registers a signal handler for ``SIGINT`` (Ctrl+C) that calls
+    :func:`perform_graceful_shutdown` with the provided state, worktree,
+    and token tracker.
+
+    Returns the previous signal handler so it can be restored.
+
+    Stub — raises NotImplementedError until task group 4.
+    """
+    raise NotImplementedError(
+        "install_sigint_handler not yet implemented"
+    )

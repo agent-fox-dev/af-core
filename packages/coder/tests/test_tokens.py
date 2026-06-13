@@ -223,7 +223,8 @@ class TestTokenTrackerRegistration:
         """TS-15-16: Verify TokenTracker is a LangChain callback handler.
 
         Requirement: 15-REQ-2.4
-        The tracker must be an instance of BaseCallbackHandler.
+        The tracker must be an instance of BaseCallbackHandler so it can
+        be registered as a callback on LLM invocations.
         """
         from langchain_core.callbacks import BaseCallbackHandler
 
@@ -231,20 +232,31 @@ class TestTokenTrackerRegistration:
 
         assert isinstance(tracker, BaseCallbackHandler)
 
-    def test_tracker_receives_callback(self) -> None:
-        """TS-15-16: Verify tracker records usage when used as callback.
+    def test_tracker_registered_via_callback_manager(self) -> None:
+        """TS-15-16: Verify tracker works within LangChain callback system.
 
         Requirement: 15-REQ-2.4
-        After invocation with the tracker as callback, tokens are recorded.
+        When registered as a handler in a CallbackManager (as LangChain
+        does internally during provider.invoke()), the tracker should
+        appear in the handlers list and record token usage.
         """
+        from langchain_core.callbacks import CallbackManager
+
         tracker = TokenTracker()
+
+        # Register via CallbackManager, simulating what happens when
+        # callbacks=[tracker] is passed to provider.invoke()
+        manager = CallbackManager(handlers=[tracker])
+        assert tracker in manager.handlers
+
+        # Simulate the callback flow that LangChain triggers after
+        # the LLM call completes
         response = mock_anthropic_response(
             input_tokens=500, output_tokens=200
         )
-
         tracker.on_llm_end(response)
 
-        assert tracker.total_tokens > 0
+        assert tracker.total_tokens == 700
 
 
 # ---------------------------------------------------------------------------

@@ -14,16 +14,30 @@ Note: Stub module for import compatibility (task group 1).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import IO, Any
 
 
 class ConsoleLogger:
     """Rich-based console logger for workflow progress.
 
     Stub — raises NotImplementedError until task group 3.
+
+    Parameters
+    ----------
+    force_terminal:
+        If True, force ANSI color output even when the output is not a TTY.
+        If False, disable ANSI codes. If None, auto-detect.
+    file:
+        Optional file-like object to write output to (default: stderr).
+        Useful for testing — pass an ``io.StringIO`` to capture output.
     """
 
-    def __init__(self, *, force_terminal: bool | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        force_terminal: bool | None = None,
+        file: IO[str] | None = None,
+    ) -> None:
         raise NotImplementedError("ConsoleLogger not yet implemented")
 
     def log_transition(

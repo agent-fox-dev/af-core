@@ -7,44 +7,9 @@ Edge cases: TS-15-E5 (non-TTY fallback).
 from __future__ import annotations
 
 import io
-from typing import Any
-from unittest.mock import MagicMock
 
 from coder.console import ConsoleLogger
 from coder.verify import VerificationResult
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _capture_console_output(
-    logger: ConsoleLogger,
-    action: str,
-    **kwargs: Any,
-) -> str:
-    """Capture console logger output to a string.
-
-    Uses the logger's internal console's file parameter to capture output.
-    We create the logger with a custom file stream to capture output.
-    """
-    buf = io.StringIO()
-    # The ConsoleLogger should be constructed to write to our buffer.
-    # This is a test utility — the exact mechanism depends on
-    # ConsoleLogger's implementation.
-    #
-    # For now, we'll use the standard approach: create the logger
-    # and call the method, then read the output.
-    if action == "log_transition":
-        logger.log_transition(**kwargs)
-    elif action == "log_test_result":
-        logger.log_test_result(**kwargs)
-    elif action == "log_token_usage":
-        logger.log_token_usage(**kwargs)
-    elif action == "print_summary":
-        logger.print_summary(**kwargs)
-    return buf.getvalue()
-
 
 # ---------------------------------------------------------------------------
 # Acceptance-criterion tests
@@ -58,10 +23,11 @@ class TestConsolePhaseTransitions:
         """TS-15-11: Output contains phase name and progress.
 
         Requirement: 15-REQ-4.1, 15-REQ-4.5
+        Verify the phase name and task group number appear in output.
         """
-        logger = ConsoleLogger(force_terminal=False)
+        buf = io.StringIO()
+        logger = ConsoleLogger(force_terminal=False, file=buf)
 
-        # Redirect output by using the logger directly
         logger.log_transition(
             "implement",
             task_group=2,
@@ -69,13 +35,9 @@ class TestConsolePhaseTransitions:
             max_attempts=5,
         )
 
-        # We can't directly capture rich console output in this stub,
-        # so we verify the method is callable and the logger object
-        # exists. The actual output verification works once ConsoleLogger
-        # is implemented with a capturable console.
-        #
-        # Full verification: output contains "implement" and "2"
-        assert True  # Placeholder — will fail at ConsoleLogger()
+        output = buf.getvalue()
+        assert "implement" in output
+        assert "2" in output
 
     def test_shows_progress_format(self) -> None:
         """TS-15-11: Output contains progress summary line.
@@ -83,9 +45,9 @@ class TestConsolePhaseTransitions:
         Requirement: 15-REQ-4.5
         Format: [task_group/total] phase (attempt N/max)
         """
-        logger = ConsoleLogger(force_terminal=False)
+        buf = io.StringIO()
+        logger = ConsoleLogger(force_terminal=False, file=buf)
 
-        # Should not raise — output should contain progress info
         logger.log_transition(
             "implement",
             task_group=2,
@@ -93,16 +55,23 @@ class TestConsolePhaseTransitions:
             max_attempts=5,
         )
 
+        output = buf.getvalue()
+        # Progress should include attempt info
+        assert "3" in output
+        assert "5" in output
+
 
 class TestConsoleTestResults:
     """TS-15-12: Console logger shows test results."""
 
     def test_shows_pass_indicator(self) -> None:
-        """TS-15-12: Verify test results displayed in console.
+        """TS-15-12: Verify passing test results displayed in console.
 
         Requirement: 15-REQ-4.2
+        Output should contain a pass indicator (e.g. 'pass' or a checkmark).
         """
-        logger = ConsoleLogger(force_terminal=False)
+        buf = io.StringIO()
+        logger = ConsoleLogger(force_terminal=False, file=buf)
 
         result = VerificationResult(
             passed=True,
@@ -115,12 +84,17 @@ class TestConsoleTestResults:
 
         logger.log_test_result(result)
 
+        output = buf.getvalue().lower()
+        assert "pass" in output or "✓" in output
+
     def test_shows_fail_indicator(self) -> None:
         """TS-15-12 (failure): Verify failed test results.
 
         Requirement: 15-REQ-4.2
+        Output should contain a fail indicator.
         """
-        logger = ConsoleLogger(force_terminal=False)
+        buf = io.StringIO()
+        logger = ConsoleLogger(force_terminal=False, file=buf)
 
         result = VerificationResult(
             passed=False,
@@ -133,6 +107,9 @@ class TestConsoleTestResults:
 
         logger.log_test_result(result)
 
+        output = buf.getvalue().lower()
+        assert "fail" in output or "✗" in output
+
 
 class TestConsoleTokenUsage:
     """TS-15-18: Console shows token usage and elapsed time."""
@@ -141,8 +118,12 @@ class TestConsoleTokenUsage:
         """TS-15-18: Output includes running token usage.
 
         Requirement: 15-REQ-4.3
+        Verify that token counts appear in the output.
         """
-        logger = ConsoleLogger(force_terminal=False)
+        buf = io.StringIO()
+        logger = ConsoleLogger(force_terminal=False, file=buf)
+
+        from unittest.mock import MagicMock
 
         tracker = MagicMock()
         tracker.input_tokens = 500
@@ -150,13 +131,21 @@ class TestConsoleTokenUsage:
         tracker.total_tokens = 700
 
         logger.log_token_usage(tracker, elapsed=45.3)
+
+        output = buf.getvalue()
+        # Should contain either individual counts or total
+        assert "500" in output or "700" in output
 
     def test_shows_elapsed_time(self) -> None:
         """TS-15-18: Output includes elapsed time.
 
         Requirement: 15-REQ-4.3
+        Verify that elapsed time appears in the output.
         """
-        logger = ConsoleLogger(force_terminal=False)
+        buf = io.StringIO()
+        logger = ConsoleLogger(force_terminal=False, file=buf)
+
+        from unittest.mock import MagicMock
 
         tracker = MagicMock()
         tracker.input_tokens = 500
@@ -164,6 +153,9 @@ class TestConsoleTokenUsage:
         tracker.total_tokens = 700
 
         logger.log_token_usage(tracker, elapsed=45.3)
+
+        output = buf.getvalue()
+        assert "45" in output
 
 
 class TestConsoleRichColors:
@@ -174,12 +166,11 @@ class TestConsoleRichColors:
 
         Requirement: 15-REQ-4.4
         Green for pass, red for fail, blue for phase transitions.
+        When force_terminal=True, output should contain ANSI escape codes.
         """
-        logger = ConsoleLogger(force_terminal=True)
+        buf = io.StringIO()
+        logger = ConsoleLogger(force_terminal=True, file=buf)
 
-        # In TTY mode with force_terminal=True, output should contain
-        # ANSI escape codes. We verify the logger can be constructed
-        # and methods called with force_terminal=True.
         result = VerificationResult(
             passed=True,
             exit_code=0,
@@ -189,6 +180,10 @@ class TestConsoleRichColors:
             elapsed_seconds=1.0,
         )
         logger.log_test_result(result)
+
+        output = buf.getvalue()
+        # ANSI escape codes start with ESC[
+        assert "\033[" in output
 
 
 class TestConsolePrintSummary:
@@ -200,13 +195,18 @@ class TestConsolePrintSummary:
         Requirement: 15-REQ-6.3
         Console output contains spec name, status, token count, elapsed.
         """
-        logger = ConsoleLogger(force_terminal=False)
+        buf = io.StringIO()
+        logger = ConsoleLogger(force_terminal=False, file=buf)
 
         summary = (
             "Spec: test_spec | Status: success | "
             "Tokens: 8000 | Elapsed: 120.5s"
         )
         logger.print_summary(summary)
+
+        output = buf.getvalue()
+        assert "success" in output.lower() or "test_spec" in output
+        assert "token" in output.lower() or "8000" in output
 
 
 # ---------------------------------------------------------------------------
@@ -224,12 +224,15 @@ class TestConsoleEdgeCases:
         When force_terminal=False (non-TTY), output should not contain
         ANSI escape codes.
         """
-        logger = ConsoleLogger(force_terminal=False)
+        buf = io.StringIO()
+        logger = ConsoleLogger(force_terminal=False, file=buf)
 
-        # The logger should produce plain text without ANSI codes
         logger.log_transition(
             "implement",
             task_group=1,
             attempt=1,
             max_attempts=5,
         )
+
+        output = buf.getvalue()
+        assert "\033[" not in output
