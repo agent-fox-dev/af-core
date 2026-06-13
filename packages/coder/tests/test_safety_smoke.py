@@ -36,6 +36,25 @@ class _SafetyConfig:
         self.max_tokens = max_tokens
 
 
+class _FailingRunner:
+    """Mock verification runner that always reports test failure.
+
+    Used in the circuit breaker smoke test to force the graph into
+    the implement -> run_tests -> implement retry loop so that the
+    circuit breaker's attempt limit is exercised.
+    """
+
+    def run(self) -> Any:
+        result = MagicMock()
+        result.passed = False
+        result.exit_code = 1
+        result.stdout = "1 failed"
+        result.stderr = ""
+        result.command = "pytest"
+        result.elapsed_seconds = 0.5
+        return result
+
+
 def _mock_always_fail_provider() -> Any:
     """Create a mock LLM provider that always 'fails' tests.
 
@@ -104,10 +123,13 @@ class TestCircuitBreakerSmoke:
         )
 
         provider = _mock_always_fail_provider()
-        config = {
+        config: dict[str, Any] = {
             "safety": {
                 "max_attempts_per_task": 2,
-            }
+            },
+            # Provide a failing runner so tests always fail, forcing
+            # the implement -> run_tests -> implement retry loop.
+            "verification_runner": _FailingRunner(),
         }
 
         result = run_spec(parsed, provider, tmp_path, config)

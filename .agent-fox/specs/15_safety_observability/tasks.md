@@ -144,8 +144,8 @@ spec 14, and adds console logging and post-mortem/summary generation.
     - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
     - [x] Requirements 3.1-3.4, 5.1-5.3, 6.1-6.3 met
 
-- [ ] 5. Integration with LangGraph execution
-  - [ ] 5.1 Wire circuit breaker into graph nodes
+- [x] 5. Integration with LangGraph execution
+  - [x] 5.1 Wire circuit breaker into graph nodes
     - Update `packages/coder/coder/graph.py` to add circuit breaker
       check before each node execution (node wrapper pattern)
     - Add `generate_postmortem` terminal node to graph
@@ -153,25 +153,25 @@ spec 14, and adds console logging and post-mortem/summary generation.
     - Pass TokenTracker as callback to all LLM invocations
     - _Requirements: 1.4, 2.4, 3.3_
 
-  - [ ] 5.2 Wire console logging into graph
+  - [x] 5.2 Wire console logging into graph
     - Add ConsoleLogger calls at each node transition
     - Log test results after verification
     - Log token usage after each LLM call
     - Print run summary at end of execution
     - _Requirements: 4.1, 4.2, 4.3_
 
-  - [ ] 5.3 Wire safety into runner
+  - [x] 5.3 Wire safety into runner
     - Update `run_spec()` to create CircuitBreaker and TokenTracker
     - Pass safety config to graph construction
     - Include token totals in RunResult
     - Call `write_run_summary()` after execution
     - _Requirements: 7.3, 9.2 (from spec 14)_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Smoke tests pass: TS-15-SMOKE-1, TS-15-SMOKE-2
-    - [ ] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
-    - [ ] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
-    - [ ] End-to-end: mock LLM that always fails → halts at max_attempts → post-mortem generated
+  - [x] 5.V Verify task group 5
+    - [x] Smoke tests pass: TS-15-SMOKE-1, TS-15-SMOKE-2
+    - [x] All existing tests still pass: `uv run pytest -q packages/coder/tests/ -v`
+    - [x] No linter warnings: `uv run ruff check packages/coder/ && uv run mypy packages/coder/coder/`
+    - [x] End-to-end: mock LLM that always fails → halts at max_attempts → post-mortem generated
 
 - [ ] 6. Wiring verification
 
